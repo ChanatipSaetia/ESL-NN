@@ -1,9 +1,10 @@
-from gensim.models.doc2vec import Doc2Vec
-from gensim.models.doc2vec import TaggedDocument
+import math
+import sys
+
 import numpy as np
+from gensim.models.doc2vec import Doc2Vec, TaggedDocument
 from sklearn.metrics.pairwise import cosine_similarity
 from sklearn.model_selection import train_test_split
-import sys
 
 
 class GensimDoc2Vec():
@@ -36,13 +37,21 @@ class GensimDoc2Vec():
         all_s = []
         all_d = []
         for i, label in zip(range(len(transform_data)), labels):
-            same = np.mean(cosine[i][list(label)])
-            diff = np.mean(cosine[i][list(self.all_label - set(label))])
+            list_label = list(label)
+            same = np.mean(cosine[i][list_label])
+            list_not_same_label = list(self.all_label - set(label))
+            diff = np.mean(cosine[i][list_not_same_label])
+            if math.isnan(same):
+                same = 0
+            if math.isnan(diff):
+                diff = 0
             all_s.append(same)
             all_d.append(diff)
 
-        diff = (np.mean(np.array(all_s)) - np.mean(np.array(all_d))) / \
-            np.mean(np.array(all_s))
+        same_similar = np.mean(np.array(all_s))
+        diff_similar = np.mean(np.array(all_d))
+        diff = (same_similar - diff_similar) / \
+            same_similar
 
         return diff
 

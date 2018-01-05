@@ -1,5 +1,7 @@
 import unittest
 
+import numpy as np
+
 from data.Dataset import Dataset
 from embedding import Doc2Vec
 
@@ -17,4 +19,9 @@ class TestDoc2vec(unittest.TestCase):
                          self.dataset_validate.datas, self.dataset_validate.labels)
 
     def test_calcurate_similar(self):
-        pass
+        temp_doc2vec = Doc2Vec(2, min_count=1)
+        tag_vector = np.array([[1, 1, 1], [2, 1, 2]])
+        datas = np.array([[1, 2, 1], [2, 1, 2], [1, 2, 2]])
+        label = np.array([set([0]), set([1]), set([0, 1])])
+        result = temp_doc2vec.calculate_similar(datas, label, tag_vector)
+        self.assertAlmostEqual(0.3798891, result, 3)
