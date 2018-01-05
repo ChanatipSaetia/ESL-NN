@@ -1,0 +1,14 @@
+*.pyc
+*.model
+*.csv
+*.txt
+*.pickle
+*.train
+*.test
+*.validate
+*.dat
+*.ht
+.DS_Store
+.vscode
+.ipynb_checkpoints
+*.ipynb
