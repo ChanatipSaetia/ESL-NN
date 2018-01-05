@@ -79,4 +79,4 @@ class Dataset():
     def number_of_data_in_each_class(self):
         if self.state != "embedding":
             raise NotEmbeddingState
-        return np.sum(self.labels, 0)
+        return np.sum(self.labels, 0).astype(int)
