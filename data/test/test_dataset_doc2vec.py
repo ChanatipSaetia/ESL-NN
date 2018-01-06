@@ -67,6 +67,5 @@ class DatasetDoc2vecUnitTest(unittest.TestCase):
 
     def test_number_of_data_in_class(self):
         real_number = [3, 3, 2, 2, 2, 2, 1, 0]
-        number = self.dataset.number_of_data_in_each_class().tolist()[
-            0]
+        number = self.dataset.number_of_data_in_each_class()
         self.assertListEqual(real_number, number)

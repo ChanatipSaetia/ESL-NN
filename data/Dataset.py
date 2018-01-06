@@ -2,7 +2,7 @@ import os
 
 import numpy as np
 from scipy.sparse import csr_matrix
-from torch import FloatTensor, LongTensor
+from torch import FloatTensor
 
 import data.hierarchy as hie
 import data.preparation as prep
@@ -73,10 +73,16 @@ class Dataset():
         for i in range(len(index) - 1):
             start, end = [index[i], index[i + 1]]
             batch_datas = FloatTensor(self.datas[start:end])
-            batch_labels = LongTensor(label_level[start:end].toarray())
+            batch_labels = FloatTensor(label_level[start:end].toarray())
             yield batch_datas, batch_labels
 
     def number_of_data_in_each_class(self):
         if self.state != "embedding":
             raise NotEmbeddingState
-        return np.sum(self.labels, 0).astype(int)
+        return np.sum(self.labels, 0).astype(int).tolist()[0]
+
+    def number_of_data(self):
+        return len(self.datas)
+
+    def index_of_level(self, level):
+        return self.level[level], self.level[level + 1]
