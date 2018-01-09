@@ -26,12 +26,21 @@ class AssembleLevel():
         self.stopping_time = stopping_time
         self.classifier = []
         self.initial_classifier()
+        self.initial_weight()
 
     def initial_classifier(self):
         raise NotImplementedError
 
     def input_classifier(self, x, level):
         raise NotImplementedError
+
+    def initial_weight(self):
+        for level, model in enumerate(self.classifier):
+            number_of_data = self.dataset.number_of_data()
+            index = self.dataset.index_of_level(level)
+            count = self.dataset.number_of_data_in_each_class()[
+                index[0]:index[1]]
+            model.initial_weight(number_of_data, count)
 
     def train(self):
         for level, model in enumerate(self.classifier):
@@ -45,6 +54,7 @@ class AssembleLevel():
                 all_batch = np.arange(
                     0, self.dataset.number_of_data(), self.batch_size).shape[0]
                 for datas, labels in self.dataset.generate_batch(level, self.batch_size):
+                    # torch.empty_cache()
                     datas_in = Variable(self.input_classifier(datas, level))
                     labels_in = Variable(labels)
                     loss = model.train_model(datas_in, labels_in)
@@ -74,6 +84,7 @@ class AssembleLevel():
                 if(epoch % int(self.iteration / 30) == int(self.iteration / 30) - 1):
                     print("Training Loss: %.3f Validate F1 macro: %.3f" %
                           (loss, max_f1_macro))
+            print()
 
     def evaluate_each_level(self, level, mode, threshold=0):
         if mode == "train":
@@ -116,8 +127,7 @@ class AssembleLevel():
             for level in range(self.dataset.number_of_level()):
                 datas_in = Variable(self.input_classifier(
                     datas, level), volatile=True)
-                each_level = labels[:, self.dataset.level[level]
-                    :self.dataset.level[level + 1]]
+                each_level = labels[:, self.dataset.level[level]:self.dataset.level[level + 1]]
                 pred = self.classifier[level].output_with_threshold(
                     datas_in).data
                 all_labels = torch.cat((all_labels, each_level), 1)
@@ -129,12 +139,9 @@ class AssembleLevel():
                 tp, pcp, cp, self.dataset.number_of_classes())
             f1_each_level = []
             for level in range(self.dataset.number_of_level()):
-                each_tp = tp[self.dataset.level[level]
-                    :self.dataset.level[level + 1]]
-                each_pcp = pcp[self.dataset.level[level]
-                    :self.dataset.level[level + 1]]
-                each_cp = cp[self.dataset.level[level]
-                    :self.dataset.level[level + 1]]
+                each_tp = tp[self.dataset.level[level]:self.dataset.level[level + 1]]
+                each_pcp = pcp[self.dataset.level[level]:self.dataset.level[level + 1]]
+                each_cp = cp[self.dataset.level[level]:self.dataset.level[level + 1]]
                 each_f1_macro, each_f1_micro = f1_from_tp_pcp(
                     each_tp, each_pcp, each_cp, self.classifier[level].number_of_class)
                 f1_each_level.append((each_f1_macro, each_f1_micro))

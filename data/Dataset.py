@@ -22,20 +22,20 @@ class Dataset():
         # sparse data
 
     def load_hierarchy(self):
-        if not os.path.isfile("%s/hierarchy.pickle" % self.data_name):
+        if not os.path.isfile("data/%s/hierarchy.pickle" % self.data_name):
             hierarchy, parent_of, all_name, name_to_index, level = hie.reindex_hierarchy(
-                'test/hierarchy.txt')
-            hie.save_hierarchy("test/hierarchy.pickle", hierarchy,
+                '%s/hierarchy.txt' % self.data_name)
+            hie.save_hierarchy("%s/hierarchy.pickle" % self.data_name, hierarchy,
                                parent_of, all_name, name_to_index, level)
         self.hierarchy, self.parent_of, self.all_name, self.name_to_index, self.level = hie.load_hierarchy(
             "%s/hierarchy.pickle" % self.data_name)
 
     def load_datas(self):
-        if not os.path.isfile("%s/fold/data_%d.pickle.%s" %
+        if not os.path.isfile("data/%s/fold/data_%d.pickle.%s" %
                               (self.data_name, self.fold_number, self.mode)):
-            file_name = "test/test_data.txt"
+            file_name = "%s/test_data.txt" % (self.data_name)
             datas, labels = prep.import_data(file_name)
-            hierarchy_file_name = "test/hierarchy.pickle"
+            hierarchy_file_name = "%s/hierarchy.pickle" % self.data_name
             new_labels = prep.map_index_of_label(
                 hierarchy_file_name, labels)
             data_name = "test"
@@ -71,7 +71,7 @@ class Dataset():
         if level == -1:
             label_level = self.labels.tocsr()
         else:
-            label_level = self.labels[:, self.level[level]:self.level[level + 1]].tocsr()
+            label_level = self.labels[:, self.level[level]                                      :self.level[level + 1]].tocsr()
         for i in range(len(index) - 1):
             start, end = [index[i], index[i + 1]]
             batch_datas = FloatTensor(self.datas[start:end])

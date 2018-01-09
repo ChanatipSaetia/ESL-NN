@@ -1,5 +1,6 @@
 from assemble_classifier import AssembleLevel
 from classifier import LCPLNoLabel
+import torch
 
 
 class AssembleNoLabel(AssembleLevel):
@@ -9,6 +10,7 @@ class AssembleNoLabel(AssembleLevel):
                                               hidden_size, use_dropout, early_stopping, stopping_time)
 
     def initial_classifier(self):
+        torch.manual_seed(12345)
         for level in range(self.dataset.number_of_level()):
             # create classifier
             input_size = self.dataset.size_of_feature()
@@ -16,7 +18,7 @@ class AssembleNoLabel(AssembleLevel):
             level = self.dataset.index_of_level(level)
             self.classifier.append(
                 LCPLNoLabel(
-                    input_size, self.hidden_size[0], number_of_class, level)
+                    input_size, self.hidden_size[0], number_of_class, level, use_dropout=self.use_dropout)
             )
 
             # initial weight
