@@ -21,13 +21,19 @@ def give_tp_pcp(label, pred):
     return true_pos.float(), pred_con_pos.float(), con_pos.float()
 
 
-def f1_score(label, pred, number_of_class, use_threshold=True, threshold=0.5):
+def tp_pcp(label, pred, use_threshold=True, threshold=0.5):
     label = label.byte()
     if use_threshold:
         pred = (F.sigmoid(pred) >= threshold)
     else:
         pred = pred.byte()
-    true_pos, pred_con_pos, con_pos = give_tp_pcp(label, pred)
+    true_pos = torch.sum((label * (label == pred)).float(), 0)
+    pred_con_pos = torch.sum(pred.float(), 0)
+    con_pos = torch.sum(label.float(), 0)
+    return true_pos.float(), pred_con_pos.float(), con_pos.float()
+
+
+def f1_from_tp_pcp(true_pos, pred_con_pos, con_pos, number_of_class):
     # f1_micro
     try:
         precision = torch.sum(true_pos) / torch.sum(pred_con_pos)
@@ -45,6 +51,12 @@ def f1_score(label, pred, number_of_class, use_threshold=True, threshold=0.5):
     f1_macro_score = sum(before_sum) / number_of_class
 
     return f1_macro_score, f1_micro
+
+
+def f1_score(label, pred, number_of_class, use_threshold=True, threshold=0.5):
+    true_pos, pred_con_pos, con_pos = tp_pcp(
+        label, pred, use_threshold, threshold)
+    return f1_from_tp_pcp(true_pos, pred_con_pos, con_pos, number_of_class)
 
 
 def f1_macro(label, data, number_of_class, threshold=0.5):

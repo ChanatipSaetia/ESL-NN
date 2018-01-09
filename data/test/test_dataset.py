@@ -73,6 +73,8 @@ class DatasetUnitTest(unittest.TestCase):
                 pass
 
     def test_number_of_each_class(self):
+        self.assertIsInstance(
+            self.dataset_train.check_each_number_of_class(0), int)
         self.assertEqual(2, self.dataset_train.check_each_number_of_class(0))
         self.assertEqual(2, self.dataset_train.check_each_number_of_class(1))
         self.assertEqual(1, self.dataset_train.check_each_number_of_class(5))

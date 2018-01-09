@@ -3,8 +3,6 @@ import unittest
 import numpy as np
 from scipy.sparse import csr_matrix
 
-import data.hierarchy as hie
-import data.preparation as prep
 from data.Dataset import Dataset
 
 
@@ -49,6 +47,10 @@ class DatasetDoc2vecUnitTest(unittest.TestCase):
             [1, 1],
             [1, 1],
             [0, 0],
+        ], [
+            [1, 1, 1, 1, 1, 1, 1, 0],
+            [1, 1, 1, 1, 1, 1, 0, 0],
+            [1, 1, 0, 0, 0, 0, 0, 0],
         ]]
         real_data = [
             [0.0, 0.0, 1.0, 0.0, 0.0, 1.0, 0.0],
@@ -56,9 +58,12 @@ class DatasetDoc2vecUnitTest(unittest.TestCase):
             [0.0, 1.0, 0.0, 0.0, 1.0, 0.0, 0.0],
         ]
         for i in range(20):
-            for l in range(2):
+            for l in range(3):
+                level = l
+                if l == 2:
+                    level = -1
                 label_index = 0
-                for data, label in self.dataset.generate_batch(l, 1):
+                for data, label in self.dataset.generate_batch(level, 1):
                     self.assertSequenceEqual(
                         label.numpy().reshape(-1).tolist(), real_label[l][label_index])
                     self.assertSequenceEqual(
@@ -69,3 +74,14 @@ class DatasetDoc2vecUnitTest(unittest.TestCase):
         real_number = [3, 3, 2, 2, 2, 2, 1, 0]
         number = self.dataset.number_of_data_in_each_class()
         self.assertListEqual(real_number, number)
+
+    def test_size_of_feature(self):
+        size_of_data = self.dataset.size_of_feature()
+        self.assertEqual(7, size_of_data)
+
+    def test_number_of_each_class(self):
+        self.assertIsInstance(
+            self.dataset.check_each_number_of_class(0), int)
+        self.assertEqual(2, self.dataset.check_each_number_of_class(0))
+        self.assertEqual(2, self.dataset.check_each_number_of_class(1))
+        self.assertEqual(1, self.dataset.check_each_number_of_class(5))

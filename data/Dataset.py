@@ -50,7 +50,7 @@ class Dataset():
         return len(self.all_name)
 
     def check_each_number_of_class(self, level):
-        return self.level[level + 1] - self.level[level]
+        return int(self.level[level + 1] - self.level[level])
 
     def change_to_Doc2Vec(self, doc2vec):
         self.datas = doc2vec.transform(self.datas)
@@ -68,8 +68,10 @@ class Dataset():
         number = len(self.datas)
         index = np.arange(0, number, batch_size).tolist()
         index.append(number)
-        label_level = self.labels[:, self.level[level]
-            :self.level[level + 1]].tocsr()
+        if level == -1:
+            label_level = self.labels.tocsr()
+        else:
+            label_level = self.labels[:, self.level[level]:self.level[level + 1]].tocsr()
         for i in range(len(index) - 1):
             start, end = [index[i], index[i + 1]]
             batch_datas = FloatTensor(self.datas[start:end])
@@ -86,3 +88,6 @@ class Dataset():
 
     def index_of_level(self, level):
         return self.level[level], self.level[level + 1]
+
+    def size_of_feature(self):
+        return self.datas.shape[1]

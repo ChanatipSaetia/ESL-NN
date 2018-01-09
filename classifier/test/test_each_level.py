@@ -48,10 +48,11 @@ class TestEachLevel(unittest.TestCase):
     def test_forward(self):
         real_result = [2.0, 2.0]
         for datas, _ in self.dataset.generate_batch(0, 1):
-            datas = Variable(datas)
+            datas = Variable(datas, volatile=True)
             result = self.model.forward(datas)
             self.assertListEqual(
                 result.data.numpy().tolist()[0], real_result)
+            self.assertFalse(result.requires_grad)
 
     def test_forward_dropout(self):
         torch.manual_seed = 12345
@@ -68,6 +69,8 @@ class TestEachLevel(unittest.TestCase):
             result = self.model.forward(datas)
             self.assertListEqual(
                 result.data.numpy().tolist()[0], real_result)
+            result = Variable(result.data)
+            self.assertFalse(result.requires_grad)
 
     def test_train_data(self):
         number_of_data = self.dataset.number_of_data()
