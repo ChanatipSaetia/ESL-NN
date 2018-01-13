@@ -5,7 +5,7 @@ from scipy.sparse import csr_matrix
 from torch import FloatTensor, ByteTensor
 from torch.autograd import Variable
 
-from assemble_classifier import AssembleNoLabel
+from assemble_classifier import AssemblePredicted
 from data.Dataset import Dataset
 
 
@@ -18,7 +18,7 @@ class TempDoc2vec():
         return csr_matrix((data_one, indice, indptr), shape=(len(data), 7)).toarray()
 
 
-class TestAssembleNoLabel(unittest.TestCase):
+class TestAssemblePredicted(unittest.TestCase):
 
     def setUp(self):
         self.dataset = Dataset("test", 1, "train")
@@ -29,8 +29,9 @@ class TestAssembleNoLabel(unittest.TestCase):
         self.dataset_validate.change_to_Doc2Vec(doc2vec)
         self.dataset_test.change_to_Doc2Vec(doc2vec)
         hidden = [5] * self.dataset.number_of_level()
-        self.model = AssembleNoLabel(
-            "test", self.dataset, self.dataset_validate, self.dataset_test, 30, 3, hidden, stopping_time=3)
+        target_hidden = [3] * (self.dataset.number_of_level() - 1)
+        self.model = AssemblePredicted(
+            "test", self.dataset, self.dataset_validate, self.dataset_test, 30, 3, hidden, target_hidden, stopping_time=3)
         self.model.classifier[0].dense.weight.data.fill_(1)
         self.model.classifier[0].dense.bias.data.zero_()
         self.model.classifier[0].logit.weight.data.fill_(0.2)
@@ -65,6 +66,8 @@ class TestAssembleNoLabel(unittest.TestCase):
         real_score = 1
         self.assertAlmostEqual(real_score, f1_macro, 6)
         self.assertAlmostEqual(real_score, f1_micro, 6)
+        f1_macro, f1_micro = self.model.evaluate_each_level(1, "train")
+        self.assertAlmostEqual(0.0, f1_macro, 6)
 
     def test_threshold_tuning(self):
         self.model.train()
@@ -73,6 +76,9 @@ class TestAssembleNoLabel(unittest.TestCase):
         real_score = 1
         self.assertAlmostEqual(real_score, f1_macro, 6)
         self.assertAlmostEqual(real_score, f1_micro, 6)
+        f1_macro, f1_micro = self.model.evaluate_each_level(1, "train")
+        self.assertAlmostEqual(0.8, f1_macro, 6)
+        self.assertAlmostEqual(0.8, f1_micro, 6)
 
     def test_correction(self):
         test_label = [[0, 0, 0, 1, 0, 0, 0, 0],

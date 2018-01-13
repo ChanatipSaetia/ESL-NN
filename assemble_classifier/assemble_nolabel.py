@@ -15,13 +15,13 @@ class AssembleNoLabel(AssembleLevel):
             # create classifier
             input_size = self.dataset.size_of_feature()
             number_of_class = self.dataset.check_each_number_of_class(level)
-            level = self.dataset.index_of_level(level)
             self.classifier.append(
                 LCPLNoLabel(
-                    input_size, self.hidden_size[0], number_of_class, level, use_dropout=self.use_dropout)
+                    input_size, self.hidden_size[level], number_of_class, use_dropout=self.use_dropout)
             )
 
             # initial weight
+            level = self.dataset.index_of_level(level)
             level_count = self.dataset.number_of_data_in_each_class()[
                 level[0]:level[1]]
             number_of_data = self.dataset.number_of_data()

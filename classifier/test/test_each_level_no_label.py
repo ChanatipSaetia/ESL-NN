@@ -22,7 +22,7 @@ class TempDoc2vec():
 class TestEachLevel(unittest.TestCase):
 
     def setUp(self):
-        self.model = LCPLNoLabel(7, 5, 2, [1, 2], use_dropout=False)
+        self.model = LCPLNoLabel(7, 5, 2, use_dropout=False)
         self.model.dense.weight.data.fill_(1)
         self.model.dense.bias.data.zero_()
         self.model.logit.weight.data.fill_(0.2)

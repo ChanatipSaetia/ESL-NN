@@ -10,11 +10,10 @@ torch.manual_seed(12345)
 
 class EachLevelClassifier(nn.Module):
 
-    def __init__(self, input_size, number_of_class, level, use_dropout=True, learning_rate=0.001):
+    def __init__(self, input_size, number_of_class, use_dropout=True, learning_rate=0.001):
         super(EachLevelClassifier, self).__init__()
         self.input_size = input_size
         self.number_of_class = number_of_class
-        self.level = level
         self.use_dropout = use_dropout
         self.learning_rate = learning_rate
         self.best_threshold = 0.5

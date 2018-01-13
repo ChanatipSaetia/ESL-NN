@@ -6,10 +6,10 @@ import torch.nn.functional as F
 
 class LCPLNoLabel(EachLevelClassifier):
 
-    def __init__(self, input_size, hidden_size, number_of_class, level, use_dropout=True):
+    def __init__(self, input_size, hidden_size, number_of_class, use_dropout=True):
         self.hidden_size = hidden_size
         super(LCPLNoLabel, self).__init__(input_size,
-                                          number_of_class, level, use_dropout)
+                                          number_of_class, use_dropout)
 
     def initial_structure(self):
         self.dense = nn.Linear(self.input_size, self.hidden_size)
