@@ -75,7 +75,7 @@ class PreparationUnitTest(unittest.TestCase):
             preparation.import_each_row_bag_of_word("2:1 4:1")
 
     def test_import_data_seq(self):
-        file_name = "test/test_data.txt"
+        file_name = "test/data.txt"
         real_data = [['1'], ['2', '3'], ['1', '6'], ['4', '1'], ['5', '2']]
         real_label = [['3'], ['4', '8'], ['5', '6'], ['1', '2'], ['7']]
         datas, labels = preparation.import_data_sequence(file_name)
@@ -91,7 +91,7 @@ class PreparationUnitTest(unittest.TestCase):
         self.assertEqual(labels, real_label)
 
     def test_import_data(self):
-        file_name = "test/test_data.txt"
+        file_name = "test/data.txt"
         real_data = [['1'], ['2', '3'], ['1', '6'], ['4', '1'], ['5', '2']]
         real_label = [['3'], ['4', '8'], ['5', '6'], ['1', '2'], ['7']]
         datas, labels = preparation.import_data(file_name)
@@ -118,7 +118,7 @@ class PreparationUnitTest(unittest.TestCase):
         self.assertEqual(labels, real_label)
 
     def test_map_index(self):
-        file_name = "test/test_data.txt"
+        file_name = "test/data.txt"
         _, labels = preparation.import_data(file_name)
         hierarchy_file_name = "test/hierarchy.pickle"
         new_labels = preparation.map_index_of_label(
@@ -133,7 +133,7 @@ class PreparationUnitTest(unittest.TestCase):
         self.assertListEqual(real_new_labels, new_labels)
 
     def test_split_data(self):
-        file_name = "test/test_data.txt"
+        file_name = "test/data.txt"
         datas, labels = preparation.import_data(file_name)
         hierarchy_file_name = "test/hierarchy.pickle"
         new_labels = preparation.map_index_of_label(

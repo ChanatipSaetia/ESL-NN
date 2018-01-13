@@ -11,12 +11,13 @@ from data.exception import NotEmbeddingState
 
 class Dataset():
 
-    def __init__(self, data_name, fold_number=1, mode="train", state="first"):
+    def __init__(self, data_name, fold_number=1, mode="train", state="first", sequence=False):
         self.data_name = data_name
         self.fold_number = fold_number
         self.mode = mode
         self.data_type = "index"
         self.state = state
+        self.sequence = sequence
         self.load_hierarchy()
         self.load_datas()
         # sparse data
@@ -33,8 +34,8 @@ class Dataset():
     def load_datas(self):
         if not os.path.isfile("data/%s/fold/data_%d.pickle.%s" %
                               (self.data_name, self.fold_number, self.mode)):
-            file_name = "%s/test_data.txt" % (self.data_name)
-            datas, labels = prep.import_data(file_name)
+            file_name = "%s/data.txt" % (self.data_name)
+            datas, labels = prep.import_data(file_name, sequence=self.sequence)
             hierarchy_file_name = "%s/hierarchy.pickle" % self.data_name
             new_labels = prep.map_index_of_label(
                 hierarchy_file_name, labels)

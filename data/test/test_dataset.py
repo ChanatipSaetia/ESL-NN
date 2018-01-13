@@ -11,9 +11,9 @@ from data.exception import NotEmbeddingState
 class DatasetUnitTest(unittest.TestCase):
 
     def setUp(self):
-        self.dataset_train = Dataset("test", 1, "train")
-        self.dataset_validate = Dataset("test", 1, "validate")
-        self.dataset_test = Dataset("test", 1, "test")
+        self.dataset_train = Dataset("test", 1, "train", sequence=True)
+        self.dataset_validate = Dataset("test", 1, "validate", sequence=True)
+        self.dataset_test = Dataset("test", 1, "test", sequence=True)
 
     def test_hierarchy(self):
         real_all_name = ['1', '2', '3', '4', '5', '6', '7', '8']
@@ -47,7 +47,7 @@ class DatasetUnitTest(unittest.TestCase):
         self.assertSequenceEqual(real_level, self.dataset_train.level.tolist())
 
     def test_load_data(self):
-        file_name = "test/test_data.txt"
+        file_name = "test/data.txt"
         datas, labels = prep.import_data(file_name)
         hierarchy_file_name = "test/hierarchy.pickle"
         labels = prep.map_index_of_label(

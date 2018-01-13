@@ -21,9 +21,9 @@ class TempDoc2vec():
 class TestAssembleNoLabel(unittest.TestCase):
 
     def setUp(self):
-        self.dataset = Dataset("test", 1, "train")
-        self.dataset_validate = Dataset("test", 1, "validate")
-        self.dataset_test = Dataset("test", 1, "test")
+        self.dataset = Dataset("test", 1, "train", sequence=True)
+        self.dataset_validate = Dataset("test", 1, "validate", sequence=True)
+        self.dataset_test = Dataset("test", 1, "test", sequence=True)
         doc2vec = TempDoc2vec()
         self.dataset.change_to_Doc2Vec(doc2vec)
         self.dataset_validate.change_to_Doc2Vec(doc2vec)

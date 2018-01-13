@@ -29,7 +29,7 @@ class TestEachLevel(unittest.TestCase):
         self.model.logit.bias.data.zero_()
         if torch.cuda.is_available():
             self.model = self.model.cuda()
-        self.dataset = Dataset("test", 1, "train")
+        self.dataset = Dataset("test", 1, "train", sequence=True)
         doc2vec = TempDoc2vec()
         self.dataset.change_to_Doc2Vec(doc2vec)
 

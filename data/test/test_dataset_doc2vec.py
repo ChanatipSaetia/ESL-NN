@@ -18,7 +18,7 @@ class TempDoc2vec():
 class DatasetDoc2vecUnitTest(unittest.TestCase):
 
     def setUp(self):
-        self.dataset = Dataset("test", 1, "train")
+        self.dataset = Dataset("test", 1, "train", sequence=True)
         doc2vec = TempDoc2vec()
         self.dataset.change_to_Doc2Vec(doc2vec)
 
