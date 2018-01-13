@@ -33,7 +33,7 @@ class EachLevelClassifier(nn.Module):
         loss = self.loss_function(output, y)
         loss.backward()
         self.optimizer.step()
-        output_loss = loss.data.numpy()[0]
+        output_loss = loss.data.cpu().numpy()[0]
         return output_loss
 
     def initial_weight(self, number_of_data, count):
@@ -45,6 +45,8 @@ class EachLevelClassifier(nn.Module):
             except ZeroDivisionError:
                 weight.append(10000)
         self.pos_weight = FloatTensor(weight)
+        if torch.cuda.is_available():
+            self.pos_weight = self.pos_weight.cuda()
         self.loss_function = nn.MultiLabelSoftMarginLoss(
             size_average=True, weight=self.pos_weight)
 
@@ -53,8 +55,8 @@ class EachLevelClassifier(nn.Module):
         output = self(x)
         f1_macro, f1_micro = f1_score(y, output, self.number_of_class, use_threshold=True,
                                       threshold=self.best_threshold)
-        f1_macro = f1_macro.data.numpy()[0]
-        f1_micro = f1_micro.data.numpy()[0]
+        f1_macro = f1_macro.data.cpu().numpy()[0]
+        f1_micro = f1_micro.data.cpu().numpy()[0]
         return f1_macro, f1_micro
 
     def evaluate_tp_pcp(self, x, y, threshold):

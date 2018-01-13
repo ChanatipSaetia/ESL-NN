@@ -15,10 +15,11 @@ class AssembleNoLabel(AssembleLevel):
             # create classifier
             input_size = self.dataset.size_of_feature()
             number_of_class = self.dataset.check_each_number_of_class(level)
-            self.classifier.append(
-                LCPLNoLabel(
-                    input_size, self.hidden_size[level], number_of_class, use_dropout=self.use_dropout)
-            )
+            model = LCPLNoLabel(
+                input_size, self.hidden_size[level], number_of_class, use_dropout=self.use_dropout)
+            if torch.cuda.is_available():
+                model = model.cuda()
+            self.classifier.append(model)
 
             # initial weight
             level = self.dataset.index_of_level(level)

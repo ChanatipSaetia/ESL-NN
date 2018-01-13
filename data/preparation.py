@@ -131,13 +131,13 @@ def split_data(datas, labels, data_name):
     for train, test in kf.split(datas):
         train_data, validate_data, train_target, validate_target = train_test_split(
             datas[train], labels[train], test_size=0.1, random_state=12345)
-        with open('Data/%s/fold/data_%d.pickle.train' % (data_name, i), 'wb') as f:
+        with open('data/%s/fold/data_%d.pickle.train' % (data_name, i), 'wb') as f:
             pickle.dump([train_data, train_target], f)
             f.close()
-        with open('Data/%s/fold/data_%d.pickle.validate' % (data_name, i), 'wb') as f:
+        with open('data/%s/fold/data_%d.pickle.validate' % (data_name, i), 'wb') as f:
             pickle.dump([validate_data, validate_target], f)
             f.close()
-        with open('Data/%s/fold/data_%d.pickle.test' % (data_name, i), 'wb') as f:
+        with open('data/%s/fold/data_%d.pickle.test' % (data_name, i), 'wb') as f:
             pickle.dump([datas[test], labels[test]], f)
             f.close()
         i = i + 1

@@ -55,7 +55,11 @@ class AssembleLevel():
                     0, self.dataset.number_of_data(), self.batch_size).shape[0]
                 for datas, labels in self.dataset.generate_batch(level, self.batch_size):
                     # torch.empty_cache()
-                    datas_in = Variable(self.input_classifier(datas, level))
+                    datas_in = self.input_classifier(datas, level)
+                    if torch.cuda.is_available():
+                        datas_in = datas_in.cuda()
+                        labels = labels.cuda()
+                    datas_in = Variable(datas_in)
                     labels_in = Variable(labels)
                     loss = model.train_model(datas_in, labels_in)
                     all_loss = all_loss + loss
@@ -95,12 +99,23 @@ class AssembleLevel():
             evaluated_data = self.dataset_test
 
         number_of_class = self.classifier[level].number_of_class
-        all_tp = Variable(FloatTensor([0] * number_of_class))
-        all_pcp = Variable(FloatTensor([0] * number_of_class))
-        all_cp = Variable(FloatTensor([0] * number_of_class))
+        initial_tp = FloatTensor([0] * number_of_class)
+        initial_pcp = FloatTensor([0] * number_of_class)
+        initial_cp = FloatTensor([0] * number_of_class)
+        if torch.cuda.is_available():
+            initial_tp = initial_tp.cuda()
+            initial_pcp = initial_pcp.cuda()
+            initial_cp = initial_cp.cuda()
+        all_tp = Variable(initial_tp)
+        all_pcp = Variable(initial_pcp)
+        all_cp = Variable(initial_cp)
         for datas, labels in evaluated_data.generate_batch(level, self.batch_size):
-            datas_in = Variable(self.input_classifier(
-                datas, level), volatile=True)
+            datas_in = self.input_classifier(
+                datas, level)
+            if torch.cuda.is_available():
+                datas_in = datas_in.cuda()
+                labels = labels.cuda()
+            datas_in = Variable(datas_in, volatile=True)
             labels_in = Variable(labels, volatile=True)
             tp, pcp, cp = self.classifier[level].evaluate_tp_pcp(
                 datas_in, labels_in, threshold)
@@ -109,8 +124,8 @@ class AssembleLevel():
             all_cp = all_cp + cp
         f1_macro, f1_micro = f1_from_tp_pcp(
             all_tp, all_pcp, all_cp, number_of_class)
-        f1_macro = f1_macro.data.numpy()[0]
-        f1_micro = f1_micro.data.numpy()[0]
+        f1_macro = f1_macro.data.cpu().numpy()[0]
+        f1_micro = f1_micro.data.cpu().numpy()[0]
         return f1_macro, f1_micro
 
     def evaluate(self, mode):
@@ -124,10 +139,19 @@ class AssembleLevel():
         for datas, labels in evaluated_data.generate_batch(-1, self.batch_size):
             all_labels = FloatTensor([])
             all_pred = ByteTensor([])
+            if torch.cuda.is_available():
+                all_labels = all_labels.cuda()
+                all_pred = all_pred.cuda()
             for level in range(self.dataset.number_of_level()):
-                datas_in = Variable(self.input_classifier(
-                    datas, level), volatile=True)
-                each_level = labels[:, self.dataset.level[level]:self.dataset.level[level + 1]]
+                datas_in = self.input_classifier(
+                    datas, level)
+
+                datas_in = Variable(datas_in, volatile=True)
+                each_level = labels[:, self.dataset.level[level]
+                    :self.dataset.level[level + 1]]
+                if torch.cuda.is_available():
+                    datas_in = datas_in.cuda()
+                    each_level = each_level.cuda()
                 pred = self.classifier[level].output_with_threshold(
                     datas_in).data
                 all_labels = torch.cat((all_labels, each_level), 1)
@@ -139,9 +163,12 @@ class AssembleLevel():
                 tp, pcp, cp, self.dataset.number_of_classes())
             f1_each_level = []
             for level in range(self.dataset.number_of_level()):
-                each_tp = tp[self.dataset.level[level]:self.dataset.level[level + 1]]
-                each_pcp = pcp[self.dataset.level[level]:self.dataset.level[level + 1]]
-                each_cp = cp[self.dataset.level[level]:self.dataset.level[level + 1]]
+                each_tp = tp[self.dataset.level[level]
+                    :self.dataset.level[level + 1]]
+                each_pcp = pcp[self.dataset.level[level]
+                    :self.dataset.level[level + 1]]
+                each_cp = cp[self.dataset.level[level]
+                    :self.dataset.level[level + 1]]
                 each_f1_macro, each_f1_micro = f1_from_tp_pcp(
                     each_tp, each_pcp, each_cp, self.classifier[level].number_of_class)
                 f1_each_level.append((each_f1_macro, each_f1_micro))

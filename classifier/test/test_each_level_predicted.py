@@ -30,6 +30,8 @@ class TestEachLevelPredicted(unittest.TestCase):
         self.model.prev_dense.bias.data.zero_()
         self.model.logit.weight.data.fill_(0.2)
         self.model.logit.bias.data.zero_()
+        if torch.cuda.is_available():
+            self.model = self.model.cuda()
         self.dataset = Dataset("test", 1, "train")
         doc2vec = TempDoc2vec()
         self.dataset.change_to_Doc2Vec(doc2vec)
@@ -39,10 +41,12 @@ class TestEachLevelPredicted(unittest.TestCase):
         for datas, _ in self.dataset.generate_batch(0, 1):
             prev_target = FloatTensor([[7.0, 7.0]])
             datas = torch.cat([datas, prev_target], 1)
+            if torch.cuda.is_available():
+                datas = datas.cuda()
             datas = Variable(datas, volatile=True)
             result = self.model.forward(datas)
             self.assertListEqual(
-                result.data.numpy().tolist()[0], real_result)
+                result.data.cpu().numpy().tolist()[0], real_result)
             self.assertFalse(result.requires_grad)
 
     def test_forward_dropout(self):
@@ -55,15 +59,19 @@ class TestEachLevelPredicted(unittest.TestCase):
         self.model.prev_dense.bias.data.zero_()
         self.model.logit.weight.data.fill_(2)
         self.model.logit.bias.data.zero_()
+        if torch.cuda.is_available():
+            self.model = self.model.cuda()
         self.model.eval()
         real_result = [440.0, 440.0]
         for datas, _ in self.dataset.generate_batch(0, 1):
             prev_target = FloatTensor([[7.0, 7.0]])
             datas = torch.cat([datas, prev_target], 1)
+            if torch.cuda.is_available():
+                datas = datas.cuda()
             datas = Variable(datas, volatile=True)
             result = self.model.forward(datas)
             self.assertListEqual(
-                result.data.numpy().tolist()[0], real_result)
+                result.data.cpu().numpy().tolist()[0], real_result)
             result = Variable(result.data)
             self.assertFalse(result.requires_grad)
 
@@ -77,6 +85,9 @@ class TestEachLevelPredicted(unittest.TestCase):
         for datas, labels in self.dataset.generate_batch(0, 3):
             prev_target = FloatTensor([[7.0, 7.0], [7.0, 7.0], [7.0, 7.0]])
             datas = torch.cat([datas, prev_target], 1)
+            if torch.cuda.is_available():
+                datas = datas.cuda()
+                labels = labels.cuda()
             datas = Variable(datas)
             labels = Variable(labels)
             loss = self.model.train_model(datas, labels)
@@ -92,6 +103,9 @@ class TestEachLevelPredicted(unittest.TestCase):
         for datas, labels, in self.dataset.generate_batch(0, 3):
             prev_target = FloatTensor([[7.0, 7.0], [7.0, 7.0], [7.0, 7.0]])
             datas = torch.cat([datas, prev_target], 1)
+            if torch.cuda.is_available():
+                datas = datas.cuda()
+                labels = labels.cuda()
             datas = Variable(datas, volatile=True)
             labels = Variable(labels, volatile=True)
             f1_macro, f1_micro = self.model.evaluate(datas, labels)

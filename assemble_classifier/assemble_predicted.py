@@ -29,10 +29,11 @@ class AssemblePredicted(AssembleLevel):
         # create classifier
         input_size = self.dataset.size_of_feature()
         number_of_class = self.dataset.check_each_number_of_class(level)
-        self.classifier.append(
-            LCPLNoLabel(
-                input_size, self.hidden_size[level], number_of_class, use_dropout=False)
-        )
+        model = LCPLNoLabel(
+            input_size, self.hidden_size[level], number_of_class, use_dropout=False)
+        if torch.cuda.is_available():
+            model = model.cuda()
+        self.classifier.append(model)
 
     def initial_other_classifier(self, level):
         # create classifier
@@ -40,16 +41,19 @@ class AssemblePredicted(AssembleLevel):
         prev_number_of_class = self.dataset.check_each_number_of_class(
             level - 1)
         number_of_class = self.dataset.check_each_number_of_class(level)
-        self.classifier.append(
-            LCPLPredicted(
-                input_size, prev_number_of_class, self.hidden_size[level], self.target_hidden_size[level - 1], number_of_class, use_dropout=self.use_dropout)
-        )
+        model = LCPLPredicted(
+            input_size, prev_number_of_class, self.hidden_size[level], self.target_hidden_size[level - 1], number_of_class, use_dropout=self.use_dropout)
+        if torch.cuda.is_available():
+            model = model.cuda()
+        self.classifier.append(model)
 
     def input_classifier(self, x, level):
         if level == 0:
             return x
         else:
-            input_data = Variable(self.input_classifier(
-                x, level - 1), volatile=True)
-            prev_pred = self.classifier[level - 1](input_data).data
+            input_data = self.input_classifier(x, level - 1)
+            if torch.cuda.is_available():
+                input_data = input_data.cuda()
+            input_data = Variable(input_data, volatile=True)
+            prev_pred = self.classifier[level - 1](input_data).data.cpu()
             return torch.cat([x, prev_pred], 1)
