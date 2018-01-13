@@ -31,7 +31,7 @@ class AssemblePredicted(AssembleLevel):
         number_of_class = self.dataset.check_each_number_of_class(level)
         self.classifier.append(
             LCPLNoLabel(
-                input_size, self.hidden_size[level], number_of_class, use_dropout=self.use_dropout)
+                input_size, self.hidden_size[level], number_of_class, use_dropout=False)
         )
 
     def initial_other_classifier(self, level):
