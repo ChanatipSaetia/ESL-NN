@@ -5,9 +5,9 @@ import torch
 
 class AssembleNoLabel(AssembleLevel):
 
-    def __init__(self, data_name, dataset, dataset_validate, dataset_test, iteration, batch_size, hidden_size, use_dropout=True, early_stopping=True, stopping_time=500):
+    def __init__(self, data_name, dataset, dataset_validate, dataset_test, iteration, batch_size, hidden_size, use_dropout=True, early_stopping=True, stopping_time=500, start_level=0):
         super(AssembleNoLabel, self).__init__(data_name, dataset, dataset_validate, dataset_test, iteration, batch_size,
-                                              hidden_size, use_dropout, early_stopping, stopping_time)
+                                              hidden_size, use_dropout, early_stopping, stopping_time, start_level)
 
     def initial_classifier(self):
         torch.manual_seed(12345)

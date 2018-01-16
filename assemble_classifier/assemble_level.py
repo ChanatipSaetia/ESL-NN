@@ -11,7 +11,7 @@ from evaluation import f1_from_tp_pcp, tp_pcp
 
 class AssembleLevel():
 
-    def __init__(self, data_name, dataset, dataset_validate, dataset_test, iteration, batch_size, hidden_size, use_dropout=True, early_stopping=True, stopping_time=500):
+    def __init__(self, data_name, dataset, dataset_validate, dataset_test, iteration, batch_size, hidden_size, use_dropout=True, early_stopping=True, stopping_time=500, start_level=0):
         self.data_name = data_name
         if not os.path.exists("best_now/%s" % data_name):
             os.makedirs("best_now/%s" % data_name)
@@ -24,6 +24,7 @@ class AssembleLevel():
         self.use_dropout = use_dropout
         self.early_stopping = early_stopping
         self.stopping_time = stopping_time
+        self.start_level = start_level
         self.classifier = []
         self.initial_classifier()
         self.initial_weight()
@@ -46,6 +47,10 @@ class AssembleLevel():
         for level, model in enumerate(self.classifier):
             max_f1_macro = 0
             c = 0
+            if level < self.start_level:
+                self.classifier[level] = torch.load("best_now/%s/model_%d.model" %
+                                                    (self.data_name, level))
+                continue
             torch.save(model, "best_now/%s/model_%d.model" %
                        (self.data_name, level))
             for epoch in range(self.iteration):
@@ -54,7 +59,8 @@ class AssembleLevel():
                 all_batch = np.arange(
                     0, self.dataset.number_of_data(), self.batch_size).shape[0]
                 for datas, labels in self.dataset.generate_batch(level, self.batch_size):
-                    # torch.empty_cache()
+                    if torch.cuda.is_available():
+                        torch.cuda.empty_cache()
                     datas_in = self.input_classifier(datas, level)
                     if torch.cuda.is_available():
                         datas_in = datas_in.cuda()

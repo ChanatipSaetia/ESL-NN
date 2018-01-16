@@ -39,8 +39,7 @@ class Dataset():
             hierarchy_file_name = "%s/hierarchy.pickle" % self.data_name
             new_labels = prep.map_index_of_label(
                 hierarchy_file_name, labels)
-            data_name = "test"
-            prep.split_data(datas, new_labels, data_name)
+            prep.split_data(datas, new_labels, self.data_name)
         self.datas, self.labels = prep.load_data_in_pickle(
             "%s/fold/data_%d.pickle.%s" % (self.data_name, self.fold_number, self.mode))
 

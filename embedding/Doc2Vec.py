@@ -91,3 +91,6 @@ class GensimDoc2Vec():
 
     def transform(self, datas):
         return np.array([self.model.infer_vector(i) for i in datas])
+
+    def load_model(self, file_name):
+        self.model = Doc2Vec.load(file_name)
