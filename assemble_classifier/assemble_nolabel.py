@@ -28,5 +28,5 @@ class AssembleNoLabel(AssembleLevel):
             number_of_data = self.dataset.number_of_data()
             self.classifier[-1].initial_weight(number_of_data, level_count)
 
-    def input_classifier(self, x, level):
+    def input_classifier(self, x, level, batch_number, mode):
         return x

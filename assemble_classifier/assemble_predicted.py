@@ -2,6 +2,9 @@ from assemble_classifier import AssembleLevel
 from classifier import LCPLPredicted, LCPLNoLabel
 import torch
 from torch.autograd import Variable
+from torch import FloatTensor
+import os
+import pickle
 
 
 class AssemblePredicted(AssembleLevel):
@@ -47,13 +50,27 @@ class AssemblePredicted(AssembleLevel):
             model = model.cuda()
         self.classifier.append(model)
 
-    def input_classifier(self, x, level):
+    def input_classifier(self, x, level, batch_number, mode):
         if level == 0:
             return x
         else:
-            input_data = self.input_classifier(x, level - 1)
-            if torch.cuda.is_available():
-                input_data = input_data.cuda()
-            input_data = Variable(input_data, volatile=True)
-            prev_pred = self.classifier[level - 1](input_data).data.cpu()
+            input_directory = "data/%s/output/%d/%s" % (
+                self.data_name, (level - 1), mode)
+            if not os.path.exists(input_directory):
+                os.makedirs(input_directory)
+
+            if not os.path.isfile(input_directory + '/%d.pickle' % batch_number):
+                input_data = self.input_classifier(
+                    x, level - 1, batch_number, mode)
+                if torch.cuda.is_available():
+                    input_data = input_data.cuda()
+                input_data = Variable(input_data, volatile=True)
+                prev_pred = self.classifier[level - 1](input_data).data.cpu()
+                with open(input_directory + '/%d.pickle' % batch_number, 'wb') as f:
+                    pickle.dump(prev_pred.numpy(), f)
+
+            else:
+                with open(input_directory + '/%d.pickle' % batch_number, 'rb') as f:
+                    prev_pred = pickle.load(f)
+                prev_pred = FloatTensor(prev_pred)
             return torch.cat([x, prev_pred], 1)
