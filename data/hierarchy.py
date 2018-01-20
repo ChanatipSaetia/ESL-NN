@@ -84,31 +84,46 @@ def find_level(hierarchy, parent_of, all_name):
                 continue
         for k, a in old_level.items():
             level[k] -= a
-    return level, number_level
+    if len(level[0]) == 1:
+        level = level[1:]
+    return level
 
 
 def reindex_hierarchy(file_name):
     hierarchy, parent_of, all_name, name_to_index = create_hierarchy_structure(
         file_name)
-    level, number_level = find_level(hierarchy, parent_of, all_name)
+    level = find_level(hierarchy, parent_of, all_name)
     remap = {}
     index = 0
     for l in level:
         for i in l:
             remap[i] = index
             index = index + 1
+
     new_hierarchy = {}
     for i in hierarchy:
-        new_hierarchy[remap[i]] = set([remap[a] for a in hierarchy[i]])
+        try:
+            new_hierarchy[remap[i]] = set([remap[a] for a in hierarchy[i]])
+        except KeyError:
+            pass
+
     new_parent_of = {}
     for i in parent_of:
-        new_parent_of[remap[i]] = set([remap[a] for a in parent_of[i]])
-    new_name_to_index = {}
-    new_all_name = ['0'] * len(all_name)
-    for i in name_to_index:
-        new_name_to_index[i] = remap[name_to_index[i]]
-        new_all_name[remap[name_to_index[i]]] = i
+        try:
+            new_parent_of[remap[i]] = set([remap[a] for a in parent_of[i]])
+        except KeyError:
+            pass
+
     new_level = np.concatenate([[0], np.cumsum([len(i) for i in level])])
+    new_name_to_index = {}
+    new_all_name = ['0'] * new_level[-1]
+    for i in name_to_index:
+        try:
+            new_name_to_index[i] = remap[name_to_index[i]]
+            new_all_name[remap[name_to_index[i]]] = i
+        except KeyError:
+            pass
+
     return new_hierarchy, new_parent_of, new_all_name, new_name_to_index, new_level
 
 

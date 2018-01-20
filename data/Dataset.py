@@ -1,4 +1,5 @@
 import os
+import pickle
 
 import numpy as np
 from scipy.sparse import csr_matrix
@@ -32,6 +33,10 @@ class Dataset():
             "%s/hierarchy.pickle" % self.data_name)
 
     def load_datas(self):
+        if self.state == 'embedding':
+            with open('data/%s/doc2vec/data.%s.pickle' % (self.data_name, self.mode), mode='rb') as f:
+                self.datas, self.labels = pickle.load(f)
+            return
         if not os.path.isfile("data/%s/fold/data_%d.pickle.%s" %
                               (self.data_name, self.fold_number, self.mode)):
             file_name = "%s/data.txt" % (self.data_name)
@@ -61,6 +66,10 @@ class Dataset():
         self.state = "embedding"
         self.labels = csr_matrix((data_one, indice, indptr),
                                  shape=(len(self.labels), len(self.all_name))).tocsc()
+        if not os.path.exists('data/%s/doc2vec/' % self.data_name):
+            os.makedirs('data/%s/doc2vec/' % self.data_name)
+        with open('data/%s/doc2vec/data.%s.pickle' % (self.data_name, self.mode), mode='wb') as f:
+            pickle.dump([self.datas, self.labels], f)
 
     def generate_batch(self, level, batch_size):
         if self.state != "embedding":
