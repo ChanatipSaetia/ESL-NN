@@ -21,7 +21,7 @@ class TestDoc2vec(unittest.TestCase):
                          self.dataset_validate.datas, self.dataset_validate.labels)
 
     def test_calcurate_similar(self):
-        temp_doc2vec = Doc2Vec(2, min_count=1)
+        temp_doc2vec = Doc2Vec(2, min_count=1, batch_size=2)
         tag_vector = np.array([[1, 1, 1], [2, 1, 2]])
         datas = np.array([[1, 2, 1], [2, 1, 2], [1, 2, 2]])
         label = np.array([set([0]), set([1]), set([0, 1])])
