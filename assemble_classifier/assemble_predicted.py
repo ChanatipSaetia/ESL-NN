@@ -9,10 +9,10 @@ import pickle
 
 class AssemblePredicted(AssembleLevel):
 
-    def __init__(self, data_name, dataset, dataset_validate, dataset_test, iteration, batch_size, hidden_size, target_hidden_size, use_dropout=True, early_stopping=True, stopping_time=500, start_level=0):
+    def __init__(self, data_name, dataset, dataset_validate, dataset_test, iteration, batch_size, hidden_size, target_hidden_size, use_dropout=True, early_stopping=True, stopping_time=500, start_level=0, end_level=10000):
         self.target_hidden_size = target_hidden_size
         super(AssemblePredicted, self).__init__(data_name, dataset, dataset_validate, dataset_test, iteration, batch_size,
-                                                hidden_size, use_dropout, early_stopping, stopping_time, start_level)
+                                                hidden_size, use_dropout, early_stopping, stopping_time, start_level, end_level)
 
     def initial_classifier(self):
         torch.manual_seed(12345)
@@ -33,7 +33,7 @@ class AssemblePredicted(AssembleLevel):
         input_size = self.dataset.size_of_feature()
         number_of_class = self.dataset.check_each_number_of_class(level)
         model = LCPLNoLabel(
-            input_size, self.hidden_size[level], number_of_class, use_dropout=False)
+            input_size, self.hidden_size[level], number_of_class, use_dropout=self.use_dropout)
         if torch.cuda.is_available():
             model = model.cuda()
         self.classifier.append(model)

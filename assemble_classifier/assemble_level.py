@@ -12,7 +12,7 @@ from evaluation import f1_from_tp_pcp, tp_pcp
 
 class AssembleLevel():
 
-    def __init__(self, data_name, dataset, dataset_validate, dataset_test, iteration, batch_size, hidden_size, use_dropout=True, early_stopping=True, stopping_time=500, start_level=0):
+    def __init__(self, data_name, dataset, dataset_validate, dataset_test, iteration, batch_size, hidden_size, use_dropout=True, early_stopping=True, stopping_time=500, start_level=0, end_level=10000):
         self.data_name = data_name
         if not os.path.exists("best_now/%s" % data_name):
             os.makedirs("best_now/%s" % data_name)
@@ -26,6 +26,7 @@ class AssembleLevel():
         self.early_stopping = early_stopping
         self.stopping_time = stopping_time
         self.start_level = start_level
+        self.end_level = end_level
         self.classifier = []
         self.initial_classifier()
         self.initial_weight()
@@ -56,6 +57,8 @@ class AssembleLevel():
                 if os.path.exists('data/%s/output/%d' % (self.data_name, level)):
                     shutil.rmtree('data/%s/output/%d' %
                                   (self.data_name, level))
+            if level >= self.end_level:
+                break
             torch.save(model, "best_now/%s/model_%d.model" %
                        (self.data_name, level))
             for epoch in range(self.iteration):
@@ -99,7 +102,7 @@ class AssembleLevel():
 
                 if(epoch % int(self.iteration / 30) == int(self.iteration / 30) - 1):
                     print("Training Loss: %.3f Validate F1 macro: %.3f" %
-                          (loss, max_f1_macro))
+                          (loss, f1_macro))
             print()
 
     def evaluate_each_level(self, level, mode, threshold=0):
@@ -143,7 +146,7 @@ class AssembleLevel():
         f1_micro = f1_micro.data.cpu().numpy()[0]
         return f1_macro, f1_micro
 
-    def evaluate(self, mode):
+    def evaluate(self, mode, correction=True):
         if mode == "train":
             evaluated_data = self.dataset
         elif mode == "validate":
@@ -165,7 +168,8 @@ class AssembleLevel():
                     datas, level, number_of_batch, mode)
 
                 datas_in = Variable(datas_in, volatile=True)
-                each_level = labels[:, self.dataset.level[level]:self.dataset.level[level + 1]]
+                each_level = labels[:, self.dataset.level[level]
+                    :self.dataset.level[level + 1]]
                 if torch.cuda.is_available():
                     datas_in = datas_in.cuda()
                     each_level = each_level.cuda()
@@ -174,15 +178,19 @@ class AssembleLevel():
                 all_labels = torch.cat((all_labels, each_level), 1)
                 all_pred = torch.cat((all_pred, pred), 1)
 
-            all_pred = self.child_based_correction(all_pred)
+            if correction:
+                all_pred = self.child_based_correction(all_pred)
             tp, pcp, cp = tp_pcp(all_labels, all_pred, use_threshold=False)
             f1_macro, f1_micro = f1_from_tp_pcp(
                 tp, pcp, cp, self.dataset.number_of_classes())
             f1_each_level = []
             for level in range(self.dataset.number_of_level()):
-                each_tp = tp[self.dataset.level[level]:self.dataset.level[level + 1]]
-                each_pcp = pcp[self.dataset.level[level]:self.dataset.level[level + 1]]
-                each_cp = cp[self.dataset.level[level]:self.dataset.level[level + 1]]
+                each_tp = tp[self.dataset.level[level]
+                    :self.dataset.level[level + 1]]
+                each_pcp = pcp[self.dataset.level[level]
+                    :self.dataset.level[level + 1]]
+                each_cp = cp[self.dataset.level[level]
+                    :self.dataset.level[level + 1]]
                 each_f1_macro, each_f1_micro = f1_from_tp_pcp(
                     each_tp, each_pcp, each_cp, self.classifier[level].number_of_class)
                 f1_each_level.append((each_f1_macro, each_f1_micro))
@@ -207,6 +215,8 @@ class AssembleLevel():
 
     def tuning_threshold(self):
         for level, model in enumerate(self.classifier):
+            if level >= self.end_level:
+                break
             best_threshold = 0.5
             max_f1_macro = 0
             for t in np.arange(0.05, 0.90, 0.05):
