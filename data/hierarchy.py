@@ -141,3 +141,83 @@ def save_hierarchy(file_name, hierarchy, parent_of, all_name, name_to_index, lev
     with open('data/%s' % file_name, 'wb') as f:
         pickle.dump([hierarchy, parent_of, all_name,
                      name_to_index, level], f)
+
+
+def cutoff_label(cutoff_label, hierarchy, parent_of, all_name, name_to_index, level):
+    remap = {}
+    j = 0
+    l = 0
+    delete_each_level = np.zeros(len(level))
+    for i in range(len(all_name)):
+        if not i in cutoff_label:
+            if i >= level[l]:
+                l = l + 1
+            remap[i] = j
+            j = j + 1
+        else:
+            if i >= level[l]:
+                l = l + 1
+            delete_each_level[l] = delete_each_level[l] + 1
+
+    # process new level
+    level = remap_level(level, delete_each_level)
+    hierarchy = remap_hie_and_parent(hierarchy, remap)
+    parent_of = remap_hie_and_parent(parent_of, remap)
+    all_name = remap_all_name(all_name, remap)
+    name_to_index = remap_name_to_index(all_name)
+    return hierarchy, parent_of, all_name, name_to_index, level, remap
+
+
+def remap_level(level, delete_each_level):
+    delete_each_level = np.cumsum(delete_each_level)
+    new_level = np.array(level) - delete_each_level
+    last_one = new_level[-1]
+    c = 0
+    for i in range(len(new_level) - 1):
+        if new_level[-2 - i] != last_one:
+            c = i
+    new_level = new_level[:c]
+    return new_level.astype(int).tolist()
+
+
+def remap_hie_and_parent(hobject, remap):
+    new_hobject = {}
+    for key in hobject:
+        value = hobject[key]
+        try:
+            new_key = remap[key]
+            for v in value:
+                try:
+                    new_v = remap[v]
+                except KeyError:
+                    continue
+                try:
+                    new_hobject[new_key].add(new_v)
+                except KeyError:
+                    new_hobject[new_key] = set([new_v])
+        except KeyError:
+            continue
+    return new_hobject
+
+
+def remap_all_name(all_name, remap):
+    all_in = list(remap.keys())
+    all_name = np.array(all_name)[all_in]
+    return all_name.tolist()
+
+
+def remap_name_to_index(all_name):
+    new_name_to_index = {}
+    for i, n in enumerate(all_name):
+        new_name_to_index[n] = i
+    return new_name_to_index
+
+
+def save_new_hierarchy(hierarchy_name, cutoff_label):
+    hierarchy, parent_of, all_name, name_to_index, level = reindex_hierarchy(
+        hierarchy_name)
+    hierarchy, parent_of, all_name, name_to_index, level, remap = cutoff_label(
+        cutoff_label, hierarchy, parent_of, all_name, name_to_index, level)
+    save_hierarchy(hierarchy_name, hierarchy, parent_of,
+                   all_name, name_to_index, level)
+    return remap

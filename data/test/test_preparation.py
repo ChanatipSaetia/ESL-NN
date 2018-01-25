@@ -167,17 +167,31 @@ class PreparationUnitTest(unittest.TestCase):
 
     def test_create_train_validate_index(self):
         labels = [[1, 2], [1, 4], [3, 5], [1], [1], [1]]
+        real_cutoff = [0, 2, 3, 4, 5, 6, 7]
         real_train = {0, 1, 3, 4}
         real_validate = {5}
         hierarchy_file_name = "test/hierarchy.pickle"
-        train, validate = preparation.create_train_validate_index(
+        train, validate, cutoff = preparation.create_train_validate_index(
             labels, hierarchy_file_name)
         self.assertSetEqual(real_train, train)
         self.assertSetEqual(real_validate, validate)
+        self.assertListEqual(real_cutoff, cutoff)
 
         real_train = {0, 1, 3, 4}
         real_validate = {0, 1, 2, 5}
-        train, validate = preparation.create_train_validate_index(
+        real_cutoff = [0, 6, 7]
+        train, validate, cutoff = preparation.create_train_validate_index(
             labels, hierarchy_file_name, least_data=1)
         self.assertSetEqual(real_train, train)
         self.assertSetEqual(real_validate, validate)
+        self.assertListEqual(real_cutoff, cutoff)
+
+    def test_remap_data(self):
+        data = [[1], [2], [3], [4], [5]]
+        labels = [set([1]), set([2]), set([3]), set([4]), set([1, 3])]
+        remap = {1: 0, 2: 1}
+        data, labels = preparation.remap_data(data, labels, remap)
+        real_datas = [[1], [2], [5]]
+        real_labels = [set([0]), set([1]), set([0])]
+        self.assertListEqual(real_datas, data.tolist())
+        self.assertListEqual(real_labels, labels.tolist())

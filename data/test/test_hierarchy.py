@@ -102,3 +102,28 @@ class HierarchyUnitTest(unittest.TestCase):
         self.assertSequenceEqual(real_all_name, all_name)
         self.assertSequenceEqual(real_name_to_index, name_to_index)
         self.assertSequenceEqual(real_level.tolist(), level.tolist())
+
+    def test_cutoff_index(self):
+        hierarchy, parent_of, all_name, name_to_index, level = hie.reindex_hierarchy(
+            'test/hierarchy.txt')
+        hierarchy, parent_of, all_name, name_to_index, level, _ = hie.cutoff_label(
+            [2, 6, 7], hierarchy, parent_of, all_name, name_to_index, level)
+        real_all_name = ['1', '2', '4', '5', '6']
+        real_hierarchy = {0: set([2]),
+                          1: set([3]),
+                          2: set([3]),
+                          3: set([4])}
+        real_parent_of = {2: set([0]),
+                          3: set([1, 2]),
+                          4: set([3])}
+        real_name_to_index = {'1': 0,
+                              '2': 1,
+                              '4': 2,
+                              '5': 3,
+                              '6': 4}
+        real_level = [0, 2, 3, 4, 5]
+        self.assertSequenceEqual(real_hierarchy, hierarchy)
+        self.assertSequenceEqual(real_parent_of, parent_of)
+        self.assertSequenceEqual(real_all_name, all_name)
+        self.assertSequenceEqual(real_name_to_index, name_to_index)
+        self.assertSequenceEqual(real_level, level)

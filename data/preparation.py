@@ -153,10 +153,8 @@ def split_data_lshtc(data_name, least_data=5):
     datas, labels = import_data(file_name, sequence=False)
     datas_test, labels_test = import_data(file_name_test, sequence=False)
     hierarchy_file_name = "%s/hierarchy.pickle" % data_name
-    new_labels = map_index_of_label(
-        hierarchy_file_name, labels)
     train_data, validate_data, train_target, validate_target = split_validate(
-        datas, new_labels, hierarchy_file_name, least_data)
+        datas, labels, hierarchy_file_name, least_data)
     with open('data/%s/pickle/data.pickle.train' % (data_name), 'wb') as f:
         pickle.dump([train_data, train_target], f)
         f.close()
@@ -169,10 +167,10 @@ def split_data_lshtc(data_name, least_data=5):
 
 
 def split_validate(datas, labels, hierarchy_name, least_data=5):
-    train_index, validate_index = create_train_validate_index(
+    train_index, validate_index, cutoff_label = create_train_validate_index(
         labels, hierarchy_name, least_data)
-    datas = np.array(datas)
-    labels = np.array(labels)
+    remap = hie.save_new_hierarchy(hierarchy_name, cutoff_label)
+    datas, labels = remap_data(datas, labels, remap)
     train_data, train_target = datas[list(
         train_index)], labels[list(train_index)]
     validate_data, validate_target = datas[list(
@@ -180,22 +178,43 @@ def split_validate(datas, labels, hierarchy_name, least_data=5):
     return train_data, train_target, validate_data, validate_target
 
 
-def create_train_validate_index(labels, hierachy_name, least_data=5):
-    _, _, all_name, _, _ = hie.load_hierarchy(hierachy_name)
+def remap_data(datas, labels, remap):
+    left_index = []
+    new_labels = []
+    for i, label in enumerate(labels):
+        new_label = set([])
+        for l in label:
+            try:
+                new_label.add(remap[l])
+            except KeyError:
+                continue
+        if new_label:
+            left_index.append(i)
+            new_labels.append(new_label)
+    datas = np.array(datas)[left_index]
+    labels = np.array(new_labels)
+    return datas, labels
+
+
+def create_train_validate_index(labels, hierarchy_name, least_data=5):
+    _, _, all_name, _, _ = hie.load_hierarchy(hierarchy_name)
     map_data_index = create_map_data_index(labels)
     train = set()
     validate = set()
-    for i in range(len(all_name)):
+    cutoff_label = []
+    for name, _ in enumerate(all_name):
         try:
-            each_label_map = map_data_index[i]
+            each_label_map = map_data_index[name]
         except KeyError:
+            cutoff_label.append(name)
             continue
         if len(each_label_map) < least_data:
+            cutoff_label.append(name)
             continue
         middle_index = math.floor((len(each_label_map) * 4) / 5)
         train.update(each_label_map[:middle_index])
         validate.update(each_label_map[middle_index:])
-    return train, validate
+    return train, validate, cutoff_label
 
 
 def create_map_data_index(labels):
