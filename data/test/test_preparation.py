@@ -156,18 +156,18 @@ class PreparationUnitTest(unittest.TestCase):
             self.assertListEqual(a, b)
 
     def test_create_map_data_index(self):
-        labels = [[1, 2], [1, 4], [3, 5], [1], [1], [1]]
-        real_map = {1: [0, 1, 3, 4, 5],
-                    2: [0],
-                    3: [2],
-                    4: [1],
-                    5: [2]}
+        labels = [['1', '2'], ['1', '4'], ['3', '5'], ['1'], ['1'], ['1']]
+        real_map = {'1': [0, 1, 3, 4, 5],
+                    '2': [0],
+                    '3': [2],
+                    '4': [1],
+                    '5': [2]}
         map_index = preparation.create_map_data_index(labels)
         self.assertDictEqual(real_map, map_index)
 
     def test_create_train_validate_index(self):
-        labels = [[1, 2], [1, 4], [3, 5], [1], [1], [1]]
-        real_cutoff = [0, 2, 3, 4, 5, 6, 7]
+        labels = [['1', '2'], ['1', '4'], ['3', '5'], ['1'], ['1'], ['1']]
+        real_cutoff = ['2', '3', '4', '5', '6', '7', '8']
         real_train = {0, 1, 3, 4}
         real_validate = {5}
         hierarchy_file_name = "test/hierarchy.pickle"
@@ -179,7 +179,7 @@ class PreparationUnitTest(unittest.TestCase):
 
         real_train = {0, 1, 3, 4}
         real_validate = {0, 1, 2, 5}
-        real_cutoff = [0, 6, 7]
+        real_cutoff = ['6', '7', '8']
         train, validate, cutoff = preparation.create_train_validate_index(
             labels, hierarchy_file_name, least_data=1)
         self.assertSetEqual(real_train, train)

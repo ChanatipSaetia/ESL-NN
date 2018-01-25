@@ -21,5 +21,6 @@ class LSHTCDataset(Dataset):
         if not os.path.isfile("data/%s/pickle/data.pickle.%s" %
                               (self.data_name, self.mode)):
             prep.split_data_lshtc(self.data_name, least_data=self.least_data)
+            self.load_hierarchy()
         self.datas, self.labels = prep.load_data_in_pickle(
             "%s/pickle/data.pickle.%s" % (self.data_name, self.mode))

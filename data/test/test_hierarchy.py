@@ -107,7 +107,7 @@ class HierarchyUnitTest(unittest.TestCase):
         hierarchy, parent_of, all_name, name_to_index, level = hie.reindex_hierarchy(
             'test/hierarchy.txt')
         hierarchy, parent_of, all_name, name_to_index, level, _ = hie.cutoff_label(
-            [2, 6, 7], hierarchy, parent_of, all_name, name_to_index, level)
+            ['3', '7', '8'], hierarchy, parent_of, all_name, name_to_index, level)
         real_all_name = ['1', '2', '4', '5', '6']
         real_hierarchy = {0: set([2]),
                           1: set([3]),

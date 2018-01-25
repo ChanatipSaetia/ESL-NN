@@ -170,11 +170,15 @@ def split_validate(datas, labels, hierarchy_name, least_data=5):
     train_index, validate_index, cutoff_label = create_train_validate_index(
         labels, hierarchy_name, least_data)
     remap = hie.save_new_hierarchy(hierarchy_name, cutoff_label)
-    datas, labels = remap_data(datas, labels, remap)
+    datas = np.array(datas)
+    labels = np.array(labels)
     train_data, train_target = datas[list(
         train_index)], labels[list(train_index)]
     validate_data, validate_target = datas[list(
         validate_index)], labels[list(validate_index)]
+    train_data, train_target = remap_data(train_data, train_target, remap)
+    validate_data, validate_target = remap_data(
+        validate_data, validate_target, remap)
     return train_data, train_target, validate_data, validate_target
 
 
@@ -202,7 +206,7 @@ def create_train_validate_index(labels, hierarchy_name, least_data=5):
     train = set()
     validate = set()
     cutoff_label = []
-    for name, _ in enumerate(all_name):
+    for _, name in enumerate(all_name):
         try:
             each_label_map = map_data_index[name]
         except KeyError:

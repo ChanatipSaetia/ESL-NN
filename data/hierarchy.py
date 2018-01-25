@@ -9,7 +9,6 @@ def create_hierarchy_structure(file_name):
     all_name = []
     name_to_index = {}
     temp_name = set()
-    print(file_name)
     with open("data/%s" % file_name) as f:
         for row in f:
             row = row.split()
@@ -149,8 +148,8 @@ def cutoff_label(cutoff_label, hierarchy, parent_of, all_name, name_to_index, le
     j = 0
     l = 0
     delete_each_level = np.zeros(len(level))
-    for i in range(len(all_name)):
-        if not i in cutoff_label:
+    for i, n in enumerate(all_name):
+        if not n in cutoff_label:
             if i >= level[l]:
                 l = l + 1
             remap[i] = j
