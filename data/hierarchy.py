@@ -9,6 +9,7 @@ def create_hierarchy_structure(file_name):
     all_name = []
     name_to_index = {}
     temp_name = set()
+    print(file_name)
     with open("data/%s" % file_name) as f:
         for row in f:
             row = row.split()
@@ -213,11 +214,11 @@ def remap_name_to_index(all_name):
     return new_name_to_index
 
 
-def save_new_hierarchy(hierarchy_name, cutoff_label):
-    hierarchy, parent_of, all_name, name_to_index, level = reindex_hierarchy(
+def save_new_hierarchy(hierarchy_name, cutoff):
+    hierarchy, parent_of, all_name, name_to_index, level = load_hierarchy(
         hierarchy_name)
     hierarchy, parent_of, all_name, name_to_index, level, remap = cutoff_label(
-        cutoff_label, hierarchy, parent_of, all_name, name_to_index, level)
+        cutoff, hierarchy, parent_of, all_name, name_to_index, level)
     save_hierarchy(hierarchy_name, hierarchy, parent_of,
                    all_name, name_to_index, level)
     return remap
