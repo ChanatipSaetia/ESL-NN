@@ -167,11 +167,13 @@ def split_data_lshtc(data_name, least_data=5):
 
 
 def split_validate(datas, labels, hierarchy_name, least_data=5):
+    cutoff = map_index_of_label(
+        hierarchy_name, labels)
     train_index, validate_index, cutoff_label = create_train_validate_index(
-        labels, hierarchy_name, least_data)
+        cutoff, hierarchy_name, least_data)
     remap = hie.save_new_hierarchy(hierarchy_name, cutoff_label)
     datas = np.array(datas)
-    labels = np.array(labels)
+    labels = np.array(cutoff)
     train_data, train_target = datas[list(
         train_index)], labels[list(train_index)]
     validate_data, validate_target = datas[list(
@@ -206,7 +208,7 @@ def create_train_validate_index(labels, hierarchy_name, least_data=5):
     train = set()
     validate = set()
     cutoff_label = []
-    for _, name in enumerate(all_name):
+    for name, _ in enumerate(all_name):
         try:
             each_label_map = map_data_index[name]
         except KeyError:

@@ -148,8 +148,8 @@ def cutoff_label(cutoff_label, hierarchy, parent_of, all_name, name_to_index, le
     j = 0
     l = 0
     delete_each_level = np.zeros(len(level))
-    for i, n in enumerate(all_name):
-        if not n in cutoff_label:
+    for i, _ in enumerate(all_name):
+        if not i in cutoff_label:
             if i >= level[l]:
                 l = l + 1
             remap[i] = j
