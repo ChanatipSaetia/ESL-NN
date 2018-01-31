@@ -181,7 +181,7 @@ def split_validate(datas, labels, hierarchy_name, least_data=5):
     train_data, train_target = remap_data(train_data, train_target, remap)
     validate_data, validate_target = remap_data(
         validate_data, validate_target, remap)
-    return train_data, train_target, validate_data, validate_target
+    return train_data, validate_data, train_target, validate_target
 
 
 def remap_data(datas, labels, remap):
