@@ -29,7 +29,7 @@ class LCPLPredicted(EachLevelClassifier):
         start_target = x.size()[1] - self.previous_number_of_class
         prev = x[:, start_target:]
         real_x = x[:, :start_target]
-        prev = F.relu(self.prev_dense(prev))
+        prev = F.tanh(self.prev_dense(prev))
         if self.use_dropout:
             prev = self.dropout_prev(prev)
             real_x = self.dropout_input(real_x)

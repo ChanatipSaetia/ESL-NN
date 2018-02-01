@@ -4,6 +4,7 @@ import sys
 
 import numpy as np
 import torch
+from torch.optim.lr_scheduler import ReduceLROnPlateau
 from torch import ByteTensor, FloatTensor
 from torch.autograd import Variable
 
@@ -12,7 +13,8 @@ from evaluation import f1_from_tp_pcp, tp_pcp
 
 class AssembleLevel():
 
-    def __init__(self, data_name, dataset, dataset_validate, dataset_test, iteration, batch_size, hidden_size, use_dropout=True, early_stopping=True, stopping_time=500, start_level=0, end_level=10000):
+    def __init__(self, data_name, dataset, dataset_validate, dataset_test, iteration, batch_size, hidden_size,
+                 learning_rate=0.001, use_dropout=True, early_stopping=True, stopping_time=500, start_level=0, end_level=10000):
         self.data_name = data_name
         if not os.path.exists("best_now/%s" % data_name):
             os.makedirs("best_now/%s" % data_name)
@@ -27,6 +29,7 @@ class AssembleLevel():
         self.stopping_time = stopping_time
         self.start_level = start_level
         self.end_level = end_level
+        self.learning_rate = learning_rate
         self.classifier = []
         self.initial_classifier()
         self.initial_weight()
@@ -34,7 +37,7 @@ class AssembleLevel():
     def initial_classifier(self):
         raise NotImplementedError
 
-    def input_classifier(self, x, level, batch_number):
+    def input_classifier(self, x, level, batch_number, mode):
         raise NotImplementedError
 
     def initial_weight(self):
@@ -45,7 +48,11 @@ class AssembleLevel():
                 index[0]:index[1]]
             model.initial_weight(number_of_data, count)
 
+    def pretrain_loading(self):
+        pass
+
     def train(self):
+        self.pretrain_loading()
         for level, model in enumerate(self.classifier):
             max_f1_macro = 0
             c = 0
@@ -61,6 +68,9 @@ class AssembleLevel():
                 break
             torch.save(model, "best_now/%s/model_%d.model" %
                        (self.data_name, level))
+
+            # scheduler = ReduceLROnPlateau(
+            #     self.pretrain_model.optimizer, mode='max', patience=30, factor=0.1, threshold=1e-3)
             for epoch in range(self.iteration):
                 all_loss = 0
                 number_of_batch = 0
@@ -93,16 +103,22 @@ class AssembleLevel():
                 elif(epoch >= int(self.iteration / 30)):
                     c = c + 1
 
+                # scheduler.step(f1_macro)
+
                 if(c >= self.stopping_time and self.early_stopping):
-                    print("Training Loss: %.3f Stopping F1 macro: %.3f" %
-                          (all_loss / number_of_batch, f1_macro))
+                    train_f1_macro, _ = self.evaluate_each_level(
+                        level, "train")
+                    print("Training F1 macro: %.3f Validate F1 macro: %.3f" %
+                          (train_f1_macro, f1_macro))
                     self.classifier[level] = torch.load("best_now/%s/model_%d.model" %
                                                         (self.data_name, level))
                     break
 
                 if(epoch % int(self.iteration / 30) == int(self.iteration / 30) - 1):
-                    print("Training Loss: %.3f Validate F1 macro: %.3f" %
-                          (loss, f1_macro))
+                    train_f1_macro, _ = self.evaluate_each_level(
+                        level, "train")
+                    print("Training F1 macro: %.3f Validate F1 macro: %.3f" %
+                          (train_f1_macro, f1_macro))
             print()
 
     def evaluate_each_level(self, level, mode, threshold=0):
@@ -168,8 +184,7 @@ class AssembleLevel():
                     datas, level, number_of_batch, mode)
 
                 datas_in = Variable(datas_in, volatile=True)
-                each_level = labels[:, self.dataset.level[level]
-                    :self.dataset.level[level + 1]]
+                each_level = labels[:, self.dataset.level[level]:self.dataset.level[level + 1]]
                 if torch.cuda.is_available():
                     datas_in = datas_in.cuda()
                     each_level = each_level.cuda()
@@ -185,12 +200,9 @@ class AssembleLevel():
                 tp, pcp, cp, self.dataset.number_of_classes())
             f1_each_level = []
             for level in range(self.dataset.number_of_level()):
-                each_tp = tp[self.dataset.level[level]
-                    :self.dataset.level[level + 1]]
-                each_pcp = pcp[self.dataset.level[level]
-                    :self.dataset.level[level + 1]]
-                each_cp = cp[self.dataset.level[level]
-                    :self.dataset.level[level + 1]]
+                each_tp = tp[self.dataset.level[level]:self.dataset.level[level + 1]]
+                each_pcp = pcp[self.dataset.level[level]:self.dataset.level[level + 1]]
+                each_cp = cp[self.dataset.level[level]:self.dataset.level[level + 1]]
                 each_f1_macro, each_f1_micro = f1_from_tp_pcp(
                     each_tp, each_pcp, each_cp, self.classifier[level].number_of_class)
                 f1_each_level.append((each_f1_macro, each_f1_micro))

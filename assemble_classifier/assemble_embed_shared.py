@@ -1,5 +1,5 @@
-from assemble_classifier import AssembleLevel
-from classifier import LCPLPredicted, LCPLNoLabel
+from assemble_classifier import AssembleEmbed
+from classifier import LCPLEmbed, LCPLEmbedShared
 import torch
 from torch.autograd import Variable
 from torch import FloatTensor
@@ -7,12 +7,12 @@ import os
 import pickle
 
 
-class AssemblePredicted(AssembleLevel):
+class AssembleEmbedShared(AssembleEmbed):
 
-    def __init__(self, data_name, dataset, dataset_validate, dataset_test, iteration, batch_size, hidden_size, target_hidden_size, learning_rate=0.001, use_dropout=True, early_stopping=True, stopping_time=500, start_level=0, end_level=10000):
+    def __init__(self, data_name, dataset, dataset_validate, dataset_test, iteration, batch_size, embed_size, hidden_size, target_hidden_size, use_dropout=True, early_stopping=True, stopping_time=500, start_level=0, end_level=10000, learning_rate=0.001):
         self.target_hidden_size = target_hidden_size
-        super(AssemblePredicted, self).__init__(data_name, dataset, dataset_validate, dataset_test, iteration, batch_size,
-                                                hidden_size, learning_rate, use_dropout, early_stopping, stopping_time, start_level, end_level)
+        super(AssembleEmbedShared, self).__init__(data_name, dataset, dataset_validate, dataset_test, iteration, batch_size, embed_size,
+                                                  hidden_size, learning_rate, use_dropout, early_stopping, stopping_time, start_level, end_level)
 
     def initial_classifier(self):
         torch.manual_seed(12345)
@@ -32,8 +32,8 @@ class AssemblePredicted(AssembleLevel):
         # create classifier
         input_size = self.dataset.size_of_feature()
         number_of_class = self.dataset.check_each_number_of_class(level)
-        model = LCPLNoLabel(
-            input_size, self.hidden_size[level], number_of_class, use_dropout=self.use_dropout)
+        model = LCPLEmbed(
+            input_size, self.embed_size, self.hidden_size[level], number_of_class, use_dropout=self.use_dropout, learning_rate=self.learning_rate)
         if torch.cuda.is_available():
             model = model.cuda()
         self.classifier.append(model)
@@ -44,14 +44,14 @@ class AssemblePredicted(AssembleLevel):
         prev_number_of_class = self.dataset.check_each_number_of_class(
             level - 1)
         number_of_class = self.dataset.check_each_number_of_class(level)
-        model = LCPLPredicted(
-            input_size, prev_number_of_class, self.hidden_size[level], self.target_hidden_size[level - 1], number_of_class, use_dropout=self.use_dropout)
+        model = LCPLEmbedShared(
+            input_size, self.embed_size, prev_number_of_class, self.hidden_size[level], self.target_hidden_size[level - 1], number_of_class, use_dropout=self.use_dropout, learning_rate=self.learning_rate)
         if torch.cuda.is_available():
             model = model.cuda()
         self.classifier.append(model)
 
     def input_classifier(self, x, level, batch_number, mode):
-        if level == 0:
+        if level == 0 or level == -1:
             return x
         else:
             input_directory = "data/%s/output/%d/%s" % (
@@ -73,4 +73,4 @@ class AssemblePredicted(AssembleLevel):
                 with open(input_directory + '/%d.pickle' % batch_number, 'rb') as f:
                     prev_pred = pickle.load(f)
                 prev_pred = FloatTensor(prev_pred)
-            return torch.cat([x, prev_pred], 1)
+            return torch.cat([x.float(), prev_pred], 1)

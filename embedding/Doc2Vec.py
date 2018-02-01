@@ -37,6 +37,7 @@ class GensimDoc2Vec():
         index.append(len(transform_data))
         same_similar = 0
         diff_similar = 0
+        all_simiilar = 0
         for j in range(len(index) - 1):
             start, end = [index[j], index[j + 1]]
             batch_data = transform_data[start:end]
@@ -45,24 +46,28 @@ class GensimDoc2Vec():
 
             all_s = []
             all_d = []
+            all_a = []
             for i, label in zip(range(len(batch_data)), batch_label):
                 list_label = list(label)
                 same = np.mean(cosine[i][list_label])
                 list_not_same_label = list(self.all_label - set(label))
                 diff = np.mean(cosine[i][list_not_same_label])
+                alla = np.mean(cosine[i])
                 if math.isnan(same):
                     same = 0
                 if math.isnan(diff):
                     diff = 0
+                if math.isnan(alla):
+                    alla = 0
                 all_s.append(same)
                 all_d.append(diff)
-
+                all_a.append(alla)
             same_similar = same_similar + \
                 np.sum(np.array(all_s))
             diff_similar = diff_similar + \
                 np.sum(np.array(all_d))
-        diff = (same_similar - diff_similar) / \
-            same_similar
+            all_simiilar = all_simiilar + np.sum(np.array(all_a))
+        diff = (same_similar - diff_similar)
 
         return diff
 
