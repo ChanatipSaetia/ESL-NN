@@ -34,6 +34,7 @@ def tp_pcp(label, pred, use_threshold=True, threshold=0.5):
 
 
 def f1_from_tp_pcp(true_pos, pred_con_pos, con_pos, number_of_class):
+    # print(true_pos, pred_con_pos, con_pos)
     # f1_micro
     try:
         precision = torch.sum(true_pos) / torch.sum(pred_con_pos)
@@ -48,8 +49,7 @@ def f1_from_tp_pcp(true_pos, pred_con_pos, con_pos, number_of_class):
     before_sum = 2 * each_precision * \
         each_recall / (each_precision + each_recall)
     before_sum[before_sum != before_sum] = 0
-    f1_macro_score = sum(before_sum) / number_of_class
-
+    f1_macro_score = torch.mean(before_sum)
     return f1_macro_score, f1_micro
 
 

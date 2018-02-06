@@ -52,7 +52,7 @@ class Dataset():
         return len(self.level) - 1
 
     def number_of_classes(self):
-        return len(self.all_name)
+        return self.level[-1]
 
     def check_each_number_of_class(self, level):
         return int(self.level[level + 1] - self.level[level])

@@ -108,8 +108,8 @@ class AssembleLevel():
                 if(c >= self.stopping_time and self.early_stopping):
                     train_f1_macro, _ = self.evaluate_each_level(
                         level, "train")
-                    print("Training F1 macro: %.3f Validate F1 macro: %.3f" %
-                          (train_f1_macro, f1_macro))
+                    print("Stopping F1 macro: %.3f Validate F1 macro: %.3f" %
+                          (train_f1_macro, max_f1_macro))
                     self.classifier[level] = torch.load("best_now/%s/model_%d.model" %
                                                         (self.data_name, level))
                     break
@@ -171,6 +171,15 @@ class AssembleLevel():
             evaluated_data = self.dataset_test
 
         number_of_batch = 0
+        number_of_class = self.dataset.number_of_classes()
+        all_tp = FloatTensor([0] * number_of_class)
+        all_pcp = FloatTensor([0] * number_of_class)
+        all_cp = FloatTensor([0] * number_of_class)
+        if torch.cuda.is_available():
+            all_tp = all_tp.cuda()
+            all_pcp = all_pcp.cuda()
+            all_cp = all_cp.cuda()
+
         for datas, labels in evaluated_data.generate_batch(-1, self.batch_size):
 
             number_of_batch = number_of_batch + 1
@@ -184,7 +193,8 @@ class AssembleLevel():
                     datas, level, number_of_batch, mode)
 
                 datas_in = Variable(datas_in, volatile=True)
-                each_level = labels[:, self.dataset.level[level]:self.dataset.level[level + 1]]
+                each_level = labels[:, self.dataset.level[level]
+                    :self.dataset.level[level + 1]]
                 if torch.cuda.is_available():
                     datas_in = datas_in.cuda()
                     each_level = each_level.cuda()
@@ -196,17 +206,25 @@ class AssembleLevel():
             if correction:
                 all_pred = self.child_based_correction(all_pred)
             tp, pcp, cp = tp_pcp(all_labels, all_pred, use_threshold=False)
-            f1_macro, f1_micro = f1_from_tp_pcp(
-                tp, pcp, cp, self.dataset.number_of_classes())
-            f1_each_level = []
-            for level in range(self.dataset.number_of_level()):
-                each_tp = tp[self.dataset.level[level]:self.dataset.level[level + 1]]
-                each_pcp = pcp[self.dataset.level[level]:self.dataset.level[level + 1]]
-                each_cp = cp[self.dataset.level[level]:self.dataset.level[level + 1]]
-                each_f1_macro, each_f1_micro = f1_from_tp_pcp(
-                    each_tp, each_pcp, each_cp, self.classifier[level].number_of_class)
-                f1_each_level.append((each_f1_macro, each_f1_micro))
-            return f1_macro, f1_micro, f1_each_level
+            # print(tp, all_tp)
+            all_tp = all_tp + tp
+            all_pcp = all_pcp + pcp
+            all_cp = all_cp + cp
+
+        f1_macro, f1_micro = f1_from_tp_pcp(
+            all_tp, all_pcp, all_cp, self.dataset.number_of_classes())
+        f1_each_level = []
+        for level in range(self.dataset.number_of_level()):
+            each_tp = all_tp[self.dataset.level[level]
+                :self.dataset.level[level + 1]]
+            each_pcp = all_pcp[self.dataset.level[level]
+                :self.dataset.level[level + 1]]
+            each_cp = all_cp[self.dataset.level[level]
+                :self.dataset.level[level + 1]]
+            each_f1_macro, each_f1_micro = f1_from_tp_pcp(
+                each_tp, each_pcp, each_cp, self.classifier[level].number_of_class)
+            f1_each_level.append((each_f1_macro, each_f1_micro))
+        return f1_macro, f1_micro, f1_each_level
 
     def child_based_correction(self, y):
         num_test = y.cpu().numpy()
