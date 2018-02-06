@@ -184,7 +184,7 @@ class AssembleLevel():
                     datas, level, number_of_batch, mode)
 
                 datas_in = Variable(datas_in, volatile=True)
-                each_level = labels[:, self.dataset.level[level]:self.dataset.level[level + 1]]
+                each_level = labels[:, self.dataset.level[level]                                    :self.dataset.level[level + 1]]
                 if torch.cuda.is_available():
                     datas_in = datas_in.cuda()
                     each_level = each_level.cuda()
@@ -200,13 +200,56 @@ class AssembleLevel():
                 tp, pcp, cp, self.dataset.number_of_classes())
             f1_each_level = []
             for level in range(self.dataset.number_of_level()):
-                each_tp = tp[self.dataset.level[level]:self.dataset.level[level + 1]]
-                each_pcp = pcp[self.dataset.level[level]:self.dataset.level[level + 1]]
-                each_cp = cp[self.dataset.level[level]:self.dataset.level[level + 1]]
+                each_tp = tp[self.dataset.level[level]                             :self.dataset.level[level + 1]]
+                each_pcp = pcp[self.dataset.level[level]                               :self.dataset.level[level + 1]]
+                each_cp = cp[self.dataset.level[level]                             :self.dataset.level[level + 1]]
                 each_f1_macro, each_f1_micro = f1_from_tp_pcp(
                     each_tp, each_pcp, each_cp, self.classifier[level].number_of_class)
                 f1_each_level.append((each_f1_macro, each_f1_micro))
             return f1_macro, f1_micro, f1_each_level
+
+    def export_result(self, mode, correction=True):
+        if mode == "train":
+            evaluated_data = self.dataset
+        elif mode == "validate":
+            evaluated_data = self.dataset_validate
+        elif mode == "test":
+            evaluated_data = self.dataset_test
+
+        number_of_batch = 0
+        for datas, labels in evaluated_data.generate_batch(-1, self.batch_size):
+
+            number_of_batch = number_of_batch + 1
+            all_labels = FloatTensor([])
+            all_pred = ByteTensor([])
+            if torch.cuda.is_available():
+                all_labels = all_labels.cuda()
+                all_pred = all_pred.cuda()
+            for level in range(self.dataset.number_of_level()):
+                datas_in = self.input_classifier(
+                    datas, level, number_of_batch, mode)
+
+                datas_in = Variable(datas_in, volatile=True)
+                each_level = labels[:, self.dataset.level[level]                                    :self.dataset.level[level + 1]]
+                if torch.cuda.is_available():
+                    datas_in = datas_in.cuda()
+                    each_level = each_level.cuda()
+                pred = self.classifier[level].output_with_threshold(
+                    datas_in).data
+                all_labels = torch.cat((all_labels, each_level), 1)
+                all_pred = torch.cat((all_pred, pred), 1)
+
+            if correction:
+                all_pred = self.child_based_correction(all_pred)
+
+            all_pred = all_pred.numpy()
+            if not os.path.exists("export/%s/%s" % (self.data_name, mode)):
+                os.makedirs("export/%s/%s" % (self.data_name, mode))
+            np_all_name = np.array(self.dataset.all_name)
+            with open("export/%s/%s/result.txt" % (self.data_name, mode), 'w') as f:
+                for p in all_pred:
+                    f.write(" ".join(np_all_name[p.astype(bool)]) + "\n")
+                f.close()
 
     def child_based_correction(self, y):
         num_test = y.cpu().numpy()
