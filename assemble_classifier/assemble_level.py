@@ -195,8 +195,7 @@ class AssembleLevel():
                     datas, level, number_of_batch, mode)
 
                 datas_in = Variable(datas_in, volatile=True)
-                each_level = labels[:, self.dataset.level[level]
-                    :self.dataset.level[level + 1]]
+                each_level = labels[:, self.dataset.level[level]                                    :self.dataset.level[level + 1]]
                 if torch.cuda.is_available():
                     datas_in = datas_in.cuda()
                     each_level = each_level.cuda()
@@ -217,12 +216,9 @@ class AssembleLevel():
             all_tp, all_pcp, all_cp, self.dataset.number_of_classes())
         f1_each_level = []
         for level in range(self.dataset.number_of_level()):
-            each_tp = all_tp[self.dataset.level[level]
-                :self.dataset.level[level + 1]]
-            each_pcp = all_pcp[self.dataset.level[level]
-                :self.dataset.level[level + 1]]
-            each_cp = all_cp[self.dataset.level[level]
-                :self.dataset.level[level + 1]]
+            each_tp = all_tp[self.dataset.level[level]                             :self.dataset.level[level + 1]]
+            each_pcp = all_pcp[self.dataset.level[level]                               :self.dataset.level[level + 1]]
+            each_cp = all_cp[self.dataset.level[level]                             :self.dataset.level[level + 1]]
             each_f1_macro, each_f1_micro = f1_from_tp_pcp(
                 each_tp, each_pcp, each_cp, self.classifier[level].number_of_class)
             f1_each_level.append((each_f1_macro, each_f1_micro))
@@ -250,7 +246,7 @@ class AssembleLevel():
                     datas, level, number_of_batch, mode)
 
                 datas_in = Variable(datas_in, volatile=True)
-                each_level = labels[:, self.dataset.level[level]                                    :self.dataset.level[level + 1]]
+                each_level = labels[:, self.dataset.level[level]:self.dataset.level[level + 1]]
                 if torch.cuda.is_available():
                     datas_in = datas_in.cuda()
                     each_level = each_level.cuda()
@@ -259,16 +255,15 @@ class AssembleLevel():
                 all_labels = torch.cat((all_labels, each_level), 1)
                 all_pred = torch.cat((all_pred, pred), 1)
 
-            if correction:
-                all_pred = self.child_based_correction(all_pred)
+            all_pred = self.child_based_correction(all_pred)
+            all_pred = self.select_deepest_label(all_pred)
 
-            all_pred = all_pred.numpy()
             if not os.path.exists("export/%s/%s" % (self.data_name, mode)):
                 os.makedirs("export/%s/%s" % (self.data_name, mode))
             np_all_name = np.array(self.dataset.all_name)
             with open("export/%s/%s/result.txt" % (self.data_name, mode), 'w') as f:
                 for p in all_pred:
-                    f.write(" ".join(np_all_name[p.astype(bool)]) + "\n")
+                    f.write(" ".join(np_all_name[p]) + "\n")
                 f.close()
 
     def child_based_correction(self, y):
@@ -287,6 +282,20 @@ class AssembleLevel():
         if torch.cuda.is_available():
             correct_test = correct_test.cuda()
         return correct_test
+
+    def select_deepest_label(self, y):
+        num_test = y.cpu().numpy()
+        for k in num_test:
+            for n in range(self.dataset.number_of_level()):
+                start_index = self.dataset.level[n]
+                last_index = self.dataset.level[n + 1]
+                for i in range(start_index, last_index):
+                    if i in self.dataset.hierarchy:
+                        for c in self.dataset.hierarchy[i]:
+                            if k[c]:
+                                k[i] = 0
+        num_test = num_test.astype(bool)
+        return num_test
 
     def tuning_threshold(self):
         for level, model in enumerate(self.classifier):
