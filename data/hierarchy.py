@@ -175,7 +175,8 @@ def remap_level(level, delete_each_level):
     c = 0
     for i in range(len(new_level) - 1):
         if new_level[-2 - i] != last_one:
-            c = i
+            c = len(new_level) - i
+            break
     new_level = new_level[:c]
     return new_level.astype(int).tolist()
 

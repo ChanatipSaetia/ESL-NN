@@ -31,6 +31,8 @@ class Dataset():
                                parent_of, all_name, name_to_index, level)
         self.hierarchy, self.parent_of, self.all_name, self.name_to_index, self.level = hie.load_hierarchy(
             "%s/hierarchy.pickle" % self.data_name)
+        self.not_leaf_node = np.array([i in list(
+            self.hierarchy.keys()) for i in range(self.number_of_classes())])
 
     def load_datas(self):
         if self.state == 'embedding':
@@ -53,6 +55,12 @@ class Dataset():
 
     def number_of_classes(self):
         return self.level[-1]
+
+    def number_of_parent_classes(self, level):
+        return int(np.sum(self.filter_parent(level)))
+
+    def filter_parent(self, level):
+        return self.not_leaf_node[self.level[level]:self.level[level + 1]]
 
     def check_each_number_of_class(self, level):
         return int(self.level[level + 1] - self.level[level])
@@ -80,7 +88,8 @@ class Dataset():
         if level == -1:
             label_level = self.labels.tocsr()
         else:
-            label_level = self.labels[:, self.level[level]                                      :self.level[level + 1]].tocsr()
+            label_level = self.labels[:, self.level[level]
+                :self.level[level + 1]].tocsr()
         for i in range(len(index) - 1):
             start, end = [index[i], index[i + 1]]
             batch_datas = FloatTensor(self.datas[start:end])

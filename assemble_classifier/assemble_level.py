@@ -95,12 +95,14 @@ class AssembleLevel():
                     sys.stdout.flush()
                 f1_macro, _ = self.evaluate_each_level(level, "validate")
                 con = (max_f1_macro < f1_macro)
+                each_print = int(self.iteration / 30)
+                each_print = 1 if each_print == 0 else each_print
                 if(con):
                     max_f1_macro = f1_macro
                     c = 0
                     torch.save(model, "best_now/%s/model_%d.model" %
                                (self.data_name, level))
-                elif(epoch >= int(self.iteration / 30)):
+                elif(epoch >= each_print):
                     c = c + 1
 
                 # scheduler.step(f1_macro)
@@ -114,7 +116,7 @@ class AssembleLevel():
                                                         (self.data_name, level))
                     break
 
-                if(epoch % int(self.iteration / 30) == int(self.iteration / 30) - 1):
+                if(epoch % each_print == each_print - 1):
                     train_f1_macro, _ = self.evaluate_each_level(
                         level, "train")
                     print("Training F1 macro: %.3f Validate F1 macro: %.3f" %

@@ -77,6 +77,7 @@ class GensimDoc2Vec():
         self.model.build_vocab(documents)
         max_diff = 0
         each_time = int(self.epoch / 50)
+        each_time = 1 if each_time == 0 else each_time
         time_before_stop = self.epoch / (each_time * 5)
         c = 0
         is_saving = False

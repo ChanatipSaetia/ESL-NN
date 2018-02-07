@@ -41,7 +41,7 @@ class AssemblePredicted(AssembleLevel):
     def initial_other_classifier(self, level):
         # create classifier
         input_size = self.dataset.size_of_feature()
-        prev_number_of_class = self.dataset.check_each_number_of_class(
+        prev_number_of_class = self.dataset.number_of_parent_classes(
             level - 1)
         number_of_class = self.dataset.check_each_number_of_class(level)
         model = LCPLPredicted(
@@ -65,12 +65,13 @@ class AssemblePredicted(AssembleLevel):
                 if torch.cuda.is_available():
                     input_data = input_data.cuda()
                 input_data = Variable(input_data, volatile=True)
-                prev_pred = self.classifier[level - 1](input_data).data.cpu()
+                prev_pred = self.classifier[level - 1](input_data).data.cpu().numpy()[:,
+                                                                                      self.dataset.filter_parent(level - 1)]
                 with open(input_directory + '/%d.pickle' % batch_number, 'wb') as f:
-                    pickle.dump(prev_pred.numpy(), f)
+                    pickle.dump(prev_pred, f)
 
             else:
                 with open(input_directory + '/%d.pickle' % batch_number, 'rb') as f:
                     prev_pred = pickle.load(f)
-                prev_pred = FloatTensor(prev_pred)
+            prev_pred = FloatTensor(prev_pred)
             return torch.cat([x, prev_pred], 1)
