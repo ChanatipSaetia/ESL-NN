@@ -71,10 +71,11 @@ class GensimDoc2Vec():
 
         return diff
 
-    def fit(self, datas, labels, datas_validate, labels_validate):
+    def fit(self, datas, labels, datas_validate, labels_validate, second_run=False):
         documents = [TaggedDocument(
             datas[i], [str(i)] + ['class_%d' % j for j in labels[i]]) for i in range(len(datas))]
-        self.model.build_vocab(documents)
+        if not second_run:
+            self.model.build_vocab(documents)
         max_diff = 0
         each_time = int(self.epoch / 50)
         each_time = 1 if each_time == 0 else each_time
@@ -103,7 +104,6 @@ class GensimDoc2Vec():
                 if is_saving:
                     self.model = Doc2Vec.load('best_now/doc2vec.model')
                 break
-
         return self
 
     def transform(self, datas):
