@@ -1,5 +1,6 @@
 import os
 import pickle
+from functools import reduce
 
 import numpy as np
 from scipy.sparse import csr_matrix
@@ -34,10 +35,24 @@ class Dataset():
         self.not_leaf_node = np.array([i in list(
             self.hierarchy.keys()) for i in range(self.number_of_classes())])
 
+        # self.leaf_node = {}
+        # for i in range(self.number_of_level() - 1):
+        #     i = self.number_of_level() - i - 2
+        #     level_range = range(self.level[i], self.level[i + 1])
+        #     for p in level_range:
+        #         if self.not_leaf_node[p]:
+        #             self.leaf_node[p] = reduce((lambda x, y: x | y), [
+        #                                        self.leaf_node[i] if i in self.leaf_node else {i} for i in self.hierarchy[p]])
+
     def load_datas(self):
         if self.state == 'embedding':
             with open('data/%s/doc2vec/data.%s.pickle' % (self.data_name, self.mode), mode='rb') as f:
                 self.datas, self.labels = pickle.load(f)
+            sum_label = np.sum(
+                self.labels[:, np.invert(self.not_leaf_node)], 1)
+            self.mean_label = np.mean(sum_label)
+            self.sd_label = np.std(sum_label)
+            self.max_label = int(np.max(sum_label))
             return
         if not os.path.isfile("data/%s/fold/data_%d.pickle.%s" %
                               (self.data_name, self.fold_number, self.mode)):
@@ -78,6 +93,12 @@ class Dataset():
             os.makedirs('data/%s/doc2vec/' % self.data_name)
         with open('data/%s/doc2vec/data.%s.pickle' % (self.data_name, self.mode), mode='wb') as f:
             pickle.dump([self.datas, self.labels], f)
+
+        sum_label = np.sum(
+            self.labels[:, np.invert(self.not_leaf_node)], 1)
+        self.mean_label = np.mean(sum_label)
+        self.sd_label = np.std(sum_label)
+        self.max_label = int(np.max(sum_label))
 
     def generate_batch(self, level, batch_size):
         if self.state != "embedding":

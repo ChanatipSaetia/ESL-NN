@@ -17,6 +17,7 @@ class EachLevelClassifier(nn.Module):
         self.use_dropout = use_dropout
         self.learning_rate = learning_rate
         self.best_threshold = 0.5
+        self.change_ratio = 1
         self.initial_structure()
         self.optimizer = optim.Adam(self.parameters(), lr=self.learning_rate)
 
