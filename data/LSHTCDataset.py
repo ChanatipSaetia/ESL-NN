@@ -1,6 +1,6 @@
 import os
 import pickle
-
+import numpy as np
 import data.preparation as prep
 
 from .Dataset import Dataset
@@ -17,6 +17,7 @@ class LSHTCDataset(Dataset):
         if self.state == 'embedding':
             with open('data/%s/doc2vec/data.%s.pickle' % (self.data_name, self.mode), mode='rb') as f:
                 self.datas, self.labels = pickle.load(f)
+            self.create_label_stat()
             return
         if not os.path.isfile("data/%s/pickle/data.pickle.%s" %
                               (self.data_name, self.mode)):

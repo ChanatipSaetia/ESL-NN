@@ -48,11 +48,7 @@ class Dataset():
         if self.state == 'embedding':
             with open('data/%s/doc2vec/data.%s.pickle' % (self.data_name, self.mode), mode='rb') as f:
                 self.datas, self.labels = pickle.load(f)
-            sum_label = np.sum(
-                self.labels[:, np.invert(self.not_leaf_node)], 1)
-            self.mean_label = np.mean(sum_label)
-            self.sd_label = np.std(sum_label)
-            self.max_label = int(np.max(sum_label))
+            self.create_label_stat()
             return
         if not os.path.isfile("data/%s/fold/data_%d.pickle.%s" %
                               (self.data_name, self.fold_number, self.mode)):
@@ -93,12 +89,15 @@ class Dataset():
             os.makedirs('data/%s/doc2vec/' % self.data_name)
         with open('data/%s/doc2vec/data.%s.pickle' % (self.data_name, self.mode), mode='wb') as f:
             pickle.dump([self.datas, self.labels], f)
+        self.create_label_stat()
 
-        sum_label = np.sum(
-            self.labels[:, np.invert(self.not_leaf_node)], 1)
+    def create_label_stat(self):
+        sum_label = np.log(np.sum(
+            self.labels[:, np.invert(self.not_leaf_node)], 1))
         self.mean_label = np.mean(sum_label)
         self.sd_label = np.std(sum_label)
         self.max_label = int(np.max(sum_label))
+        self.min_label = int(np.min(sum_label))
 
     def generate_batch(self, level, batch_size):
         if self.state != "embedding":

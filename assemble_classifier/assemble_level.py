@@ -239,10 +239,10 @@ class AssembleLevel():
     def get_leaf_node(self, y):
         num_test = F.sigmoid(y).cpu().numpy()
 
-        for l, m in enumerate(self.classifier):
-            first = self.dataset.level[l]
-            last = self.dataset.level[l + 1]
-            num_test[:, first:last] = num_test[:, first:last]
+        # for l, m in enumerate(self.classifier):
+        #     first = self.dataset.level[l]
+        #     last = self.dataset.level[l + 1]
+        #     num_test[:, first:last] = num_test[:, first:last]
 
         for h in self.dataset.hierarchy:
             child = list(self.dataset.hierarchy[h])
@@ -253,17 +253,18 @@ class AssembleLevel():
             np.invert(self.dataset.not_leaf_node).astype(float)
         sort_only_leaf = only_leaf.argsort()
         indice_sort = sort_only_leaf[:, -self.dataset.max_label:]
-        distribution = np.sum(
-            np.array(list(map((lambda x, y: x[y]), only_leaf, indice_sort))), 1)
+        distribution = np.log(np.sum(
+            np.array(list(map((lambda x, y: x[y]), only_leaf, indice_sort))), 1))
         mean_dis = np.mean(distribution)
         sd_dis = np.std(distribution)
 
-        leaf_in_each_row = np.apply_along_axis(
+        leaf_in_each_row = np.around(np.exp(np.apply_along_axis(
             lambda d: ((d - mean_dis) / sd_dis) *
             self.dataset.sd_label + self.dataset.mean_label,
-            0, distribution).astype(int)
+            0, distribution))).astype(int)
         ans_index = list(
-            map((lambda x, y: x[-y:]), indice_sort, leaf_in_each_row))
+            map((lambda x, y: x[-y:] if y >= self.dataset.min_label else x[-self.dataset.min_label:]), indice_sort, leaf_in_each_row))
+        # print(ans_index)
         return ans_index
 
     def to_one_hot(self, ans_index):
