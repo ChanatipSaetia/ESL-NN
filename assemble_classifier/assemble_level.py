@@ -56,6 +56,8 @@ class AssembleLevel():
     def train(self):
         self.pretrain_loading()
         for level, model in enumerate(self.classifier):
+            if level > 0 and os.path.isdir('data/%s/output' % self.data_name):
+                shutil.rmtree('data/%s/output' % self.data_name)
             max_f1_macro = 0
             c = 0
             if level < self.start_level:
@@ -70,15 +72,16 @@ class AssembleLevel():
                 break
             torch.save(model, "best_now/%s/model_%d.model" %
                        (self.data_name, level))
-
+            start_batch = 32
+            previous_loss = 99999999
             # scheduler = ReduceLROnPlateau(
             #     self.pretrain_model.optimizer, mode='max', patience=30, factor=0.1, threshold=1e-3)
             for epoch in range(self.iteration):
                 all_loss = 0
                 number_of_batch = 0
                 all_batch = np.arange(
-                    0, self.dataset.number_of_data(), self.batch_size).shape[0]
-                for datas, labels in self.dataset.generate_batch(level, self.batch_size):
+                    0, self.dataset.number_of_data(), start_batch).shape[0]
+                for datas, labels in self.dataset.generate_batch(level, start_batch):
                     number_of_batch = number_of_batch + 1
                     if torch.cuda.is_available():
                         torch.cuda.empty_cache()
@@ -121,13 +124,25 @@ class AssembleLevel():
                 if(epoch % each_print == each_print - 1):
                     train_f1_macro, _ = self.evaluate_each_level(
                         level, "train")
+                    if level > 0 and os.path.isdir('data/%s/output' % self.data_name):
+                        shutil.rmtree('data/%s/output' % self.data_name)
                     print("Training F1 macro: %.3f Validate F1 macro: %.3f" %
                           (train_f1_macro, f1_macro))
+
+                check = abs(previous_loss - all_loss) / number_of_batch < 0.01
+                if(check and start_batch <= self.dataset.number_of_data()):
+                    start_batch *= 2
+                    if level > 0 and os.path.isdir('data/%s/output' % self.data_name):
+                        shutil.rmtree('data/%s/output/' % self.data_name)
+
+                previous_loss = all_loss
             print()
 
     def evaluate_each_level(self, level, mode, threshold=0):
         if mode == "train":
             evaluated_data = self.dataset
+            if level > 0 and os.path.isdir('data/%s/output' % self.data_name):
+                shutil.rmtree('data/%s/output' % self.data_name)
         elif mode == "validate":
             evaluated_data = self.dataset_validate
         elif mode == "test":
@@ -166,7 +181,7 @@ class AssembleLevel():
         f1_micro = f1_micro.data.cpu().numpy()[0]
         return f1_macro, f1_micro
 
-    def evaluate(self, mode, correction=True, mandory_leaf=False):
+    def evaluate(self, mode, correction=True, mandatory_leaf=False):
         if mode == "train":
             evaluated_data = self.dataset
         elif mode == "validate":
@@ -188,106 +203,7 @@ class AssembleLevel():
 
             number_of_batch = number_of_batch + 1
             all_labels = FloatTensor([])
-            if mandory_leaf:
-                all_pred = FloatTensor([])
-            else:
-                all_pred = ByteTensor([])
-            if torch.cuda.is_available():
-                all_labels = all_labels.cuda()
-                all_pred = all_pred.cuda()
-            for level in range(self.dataset.number_of_level()):
-                datas_in = self.input_classifier(
-                    datas, level, number_of_batch, mode)
-
-                datas_in = Variable(datas_in, volatile=True)
-                each_level = labels[:, self.dataset.level[level]:self.dataset.level[level + 1]]
-                if torch.cuda.is_available():
-                    datas_in = datas_in.cuda()
-                    each_level = each_level.cuda()
-                if mandory_leaf:
-                    pred = self.classifier[level](
-                        datas_in).data
-                else:
-                    pred = self.classifier[level].output_with_threshold(
-                        datas_in).data
-                all_labels = torch.cat((all_labels, each_level), 1)
-                all_pred = torch.cat((all_pred, pred), 1)
-
-            if mandory_leaf:
-                all_pred = self.get_leaf_node(all_pred)
-                all_pred = self.to_one_hot(all_pred)
-            if correction:
-                all_pred = self.child_based_correction(all_pred)
-            tp, pcp, cp = tp_pcp(all_labels, all_pred, use_threshold=False)
-            # print(tp, all_tp)
-            all_tp = all_tp + tp
-            all_pcp = all_pcp + pcp
-            all_cp = all_cp + cp
-
-        f1_macro, f1_micro = f1_from_tp_pcp(
-            all_tp, all_pcp, all_cp, self.dataset.number_of_classes())
-        f1_each_level = []
-        for level in range(self.dataset.number_of_level()):
-            each_tp = all_tp[self.dataset.level[level]:self.dataset.level[level + 1]]
-            each_pcp = all_pcp[self.dataset.level[level]:self.dataset.level[level + 1]]
-            each_cp = all_cp[self.dataset.level[level]:self.dataset.level[level + 1]]
-            each_f1_macro, each_f1_micro = f1_from_tp_pcp(
-                each_tp, each_pcp, each_cp, self.classifier[level].number_of_class)
-            f1_each_level.append((each_f1_macro, each_f1_micro))
-        return f1_macro, f1_micro, f1_each_level
-
-    def get_leaf_node(self, y):
-        num_test = F.sigmoid(y).cpu().numpy()
-
-        # for l, m in enumerate(self.classifier):
-        #     first = self.dataset.level[l]
-        #     last = self.dataset.level[l + 1]
-        #     num_test[:, first:last] = num_test[:, first:last]
-
-        for h in self.dataset.hierarchy:
-            child = list(self.dataset.hierarchy[h])
-            num_test[:, child] = num_test[:, child] * \
-                np.repeat(num_test[:, h:h + 1], len(child), axis=1)
-
-        only_leaf = num_test * \
-            np.invert(self.dataset.not_leaf_node).astype(float)
-        sort_only_leaf = only_leaf.argsort()
-        indice_sort = sort_only_leaf[:, -self.dataset.max_label:]
-        distribution = np.log(np.sum(
-            np.array(list(map((lambda x, y: x[y]), only_leaf, indice_sort))), 1))
-        mean_dis = np.mean(distribution)
-        sd_dis = np.std(distribution)
-
-        leaf_in_each_row = np.around(np.exp(np.apply_along_axis(
-            lambda d: ((d - mean_dis) / sd_dis) *
-            self.dataset.sd_label + self.dataset.mean_label,
-            0, distribution))).astype(int)
-        ans_index = list(
-            map((lambda x, y: x[-y:] if y >= self.dataset.min_label else x[-self.dataset.min_label:]), indice_sort, leaf_in_each_row))
-        # print(ans_index)
-        return ans_index
-
-    def to_one_hot(self, ans_index):
-        indice = [j for i in ans_index for j in i]
-        indptr = np.cumsum([0] + [len(i) for i in ans_index])
-        data_one = np.ones(len(indice))
-        return csr_matrix((data_one, indice, indptr), shape=(
-            len(ans_index), self.dataset.number_of_classes())).toarray()
-
-    def export_result(self, mode, correction=True, mandory_leaf=False):
-        if mode == "train":
-            evaluated_data = self.dataset
-        elif mode == "validate":
-            evaluated_data = self.dataset_validate
-        elif mode == "test":
-            evaluated_data = self.dataset_test
-
-        number_of_batch = 0
-        for datas, labels in evaluated_data.generate_batch(-1, self.batch_size):
-
-            number_of_batch = number_of_batch + 1
-            all_labels = FloatTensor([])
-            if mandory_leaf:
+            if mandatory_leaf:
                 all_pred = FloatTensor([])
             else:
                 all_pred = ByteTensor([])
@@ -304,7 +220,7 @@ class AssembleLevel():
                 if torch.cuda.is_available():
                     datas_in = datas_in.cuda()
                     each_level = each_level.cuda()
-                if mandory_leaf:
+                if mandatory_leaf:
                     pred = self.classifier[level](
                         datas_in).data
                 else:
@@ -313,7 +229,113 @@ class AssembleLevel():
                 all_labels = torch.cat((all_labels, each_level), 1)
                 all_pred = torch.cat((all_pred, pred), 1)
 
-            if mandory_leaf:
+            if mandatory_leaf:
+                all_pred = self.get_leaf_node(all_pred)
+                all_pred = self.to_one_hot(all_pred)
+            if correction:
+                all_pred = self.child_based_correction(all_pred)
+            tp, pcp, cp = tp_pcp(all_labels, all_pred, use_threshold=False)
+            # print(tp, all_tp)
+            all_tp = all_tp + tp
+            all_pcp = all_pcp + pcp
+            all_cp = all_cp + cp
+
+        f1_macro, f1_micro = f1_from_tp_pcp(
+            all_tp, all_pcp, all_cp, self.dataset.number_of_classes())
+        f1_each_level = []
+        for level in range(self.dataset.number_of_level()):
+            each_tp = all_tp[self.dataset.level[level]
+                :self.dataset.level[level + 1]]
+            each_pcp = all_pcp[self.dataset.level[level]
+                :self.dataset.level[level + 1]]
+            each_cp = all_cp[self.dataset.level[level]
+                :self.dataset.level[level + 1]]
+            each_f1_macro, each_f1_micro = f1_from_tp_pcp(
+                each_tp, each_pcp, each_cp, self.classifier[level].number_of_class)
+            f1_each_level.append((each_f1_macro, each_f1_micro))
+        return f1_macro, f1_micro, f1_each_level
+
+    def get_leaf_node(self, y):
+        num_test = F.sigmoid(y).cpu().numpy()
+
+        # for l, m in enumerate(self.classifier):
+        #     first = self.dataset.level[l]
+        #     last = self.dataset.level[l + 1]
+        #     num_test[:, first:last] = num_test[:, first:last]
+
+        # for h in self.dataset.hierarchy:
+        #     child = list(self.dataset.hierarchy[h])
+        #     num_test[:, child] = num_test[:, child] * \
+        #         np.repeat(num_test[:, h:h + 1], len(child), axis=1)
+
+        only_leaf = num_test * \
+            np.invert(self.dataset.not_leaf_node).astype(float)
+        del num_test
+        indice_sort = only_leaf.argsort()
+        indice_sort = indice_sort[:, -self.dataset.max_label:]
+        print(only_leaf)
+        distribution = np.sum(
+            np.array(list(map((lambda x, y: x[y]), only_leaf, indice_sort))), 1)
+        mean_dis = np.mean(distribution)
+        sd_dis = np.std(distribution)
+
+        leaf_in_each_row = np.around(np.apply_along_axis(
+            lambda d: ((d - mean_dis) / sd_dis) *
+            self.dataset.sd_label + self.dataset.mean_label + 3,
+            0, distribution)).astype(int)
+        # leaf_in_each_row = np.repeat(1, len(indice_sort)).astype(int)
+        min_leaf = self.dataset.min_label if self.dataset.min_label >= 1 else 1
+        ans_index = list(
+            map((lambda x, y: x[-y:] if y >= min_leaf else x[-min_leaf:]), indice_sort, leaf_in_each_row))
+        # print(ans_index)
+        return ans_index
+
+    def to_one_hot(self, ans_index):
+        indice = [j for i in ans_index for j in i]
+        indptr = np.cumsum([0] + [len(i) for i in ans_index])
+        data_one = np.ones(len(indice))
+        return csr_matrix((data_one, indice, indptr), shape=(
+            len(ans_index), self.dataset.number_of_classes())).toarray()
+
+    def export_result(self, mode, correction=True, mandatory_leaf=False):
+        if mode == "train":
+            evaluated_data = self.dataset
+        elif mode == "validate":
+            evaluated_data = self.dataset_validate
+        elif mode == "test":
+            evaluated_data = self.dataset_test
+
+        number_of_batch = 0
+        for datas, labels in evaluated_data.generate_batch(-1, self.batch_size):
+
+            number_of_batch = number_of_batch + 1
+            all_labels = FloatTensor([])
+            if mandatory_leaf:
+                all_pred = FloatTensor([])
+            else:
+                all_pred = ByteTensor([])
+            if torch.cuda.is_available():
+                all_labels = all_labels.cuda()
+                all_pred = all_pred.cuda()
+            for level in range(self.dataset.number_of_level()):
+                datas_in = self.input_classifier(
+                    datas, level, number_of_batch, mode)
+
+                datas_in = Variable(datas_in, volatile=True)
+                each_level = labels[:, self.dataset.level[level]                                    :self.dataset.level[level + 1]]
+                if torch.cuda.is_available():
+                    datas_in = datas_in.cuda()
+                    each_level = each_level.cuda()
+                if mandatory_leaf:
+                    pred = self.classifier[level](
+                        datas_in).data
+                else:
+                    pred = self.classifier[level].output_with_threshold(
+                        datas_in).data
+                all_labels = torch.cat((all_labels, each_level), 1)
+                all_pred = torch.cat((all_pred, pred), 1)
+
+            if mandatory_leaf:
                 all_pred = self.get_leaf_node(all_pred)
             else:
                 all_pred = self.child_based_correction(all_pred)

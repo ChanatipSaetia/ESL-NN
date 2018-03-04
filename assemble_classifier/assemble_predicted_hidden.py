@@ -1,5 +1,5 @@
 from assemble_classifier import AssembleLevel
-from classifier import LCPLPredicted, LCPLNoLabel
+from classifier import LCPLNoLabel, LCPLPredicted_Hidden, LCPLNoLabelHidden
 import torch
 from torch.autograd import Variable
 from torch import FloatTensor
@@ -7,12 +7,11 @@ import os
 import pickle
 
 
-class AssemblePredicted(AssembleLevel):
+class AssemblePredictedHidden(AssembleLevel):
 
-    def __init__(self, data_name, dataset, dataset_validate, dataset_test, iteration, batch_size, hidden_size, target_hidden_size, learning_rate=0.001, use_dropout=True, early_stopping=True, stopping_time=500, start_level=0, end_level=10000):
-        self.target_hidden_size = target_hidden_size
-        super(AssemblePredicted, self).__init__(data_name, dataset, dataset_validate, dataset_test, iteration, batch_size,
-                                                hidden_size, learning_rate, use_dropout, early_stopping, stopping_time, start_level, end_level)
+    def __init__(self, data_name, dataset, dataset_validate, dataset_test, iteration, batch_size, hidden_size, learning_rate=0.001, use_dropout=True, early_stopping=True, stopping_time=500, start_level=0, end_level=10000):
+        super(AssemblePredictedHidden, self).__init__(data_name, dataset, dataset_validate, dataset_test, iteration, batch_size,
+                                                      hidden_size, learning_rate, use_dropout, early_stopping, stopping_time, start_level, end_level)
 
     def initial_classifier(self):
         torch.manual_seed(12345)
@@ -32,8 +31,9 @@ class AssemblePredicted(AssembleLevel):
         # create classifier
         input_size = self.dataset.size_of_feature()
         number_of_class = self.dataset.check_each_number_of_class(level)
-        model = LCPLNoLabel(
-            input_size, self.hidden_size[level], number_of_class, use_dropout=self.use_dropout, learning_rate=self.learning_rate)
+        hidden = number_of_class * 2 if number_of_class * 2 <= 300 else 300
+        model = LCPLNoLabelHidden(
+            input_size, hidden, number_of_class, use_dropout=self.use_dropout, learning_rate=self.learning_rate)
         if torch.cuda.is_available():
             model = model.cuda()
         self.classifier.append(model)
@@ -41,11 +41,11 @@ class AssemblePredicted(AssembleLevel):
     def initial_other_classifier(self, level):
         # create classifier
         input_size = self.dataset.size_of_feature()
-        prev_number_of_class = self.dataset.number_of_parent_classes(
-            level - 1)
+        prev_number_of_class = self.classifier[level - 1].hidden_size
         number_of_class = self.dataset.check_each_number_of_class(level)
-        model = LCPLPredicted(
-            input_size, prev_number_of_class, self.hidden_size[level], self.target_hidden_size[level - 1], number_of_class, use_dropout=self.use_dropout, learning_rate=self.learning_rate)
+        hidden = number_of_class * 2 if number_of_class * 2 <= 300 else 300
+        model = LCPLPredicted_Hidden(
+            input_size, prev_number_of_class, hidden, number_of_class, use_dropout=self.use_dropout, learning_rate=self.learning_rate)
         if torch.cuda.is_available():
             model = model.cuda()
         self.classifier.append(model)
@@ -65,8 +65,8 @@ class AssemblePredicted(AssembleLevel):
                 if torch.cuda.is_available():
                     input_data = input_data.cuda()
                 input_data = Variable(input_data, volatile=True)
-                prev_pred = self.classifier[level - 1](input_data).data.cpu().numpy()[:,
-                                                                                      self.dataset.filter_parent(level - 1)]
+                prev_pred = self.classifier[level -
+                                            1].forward_hidden(input_data).data.cpu().numpy()
                 with open(input_directory + '/%d.pickle' % batch_number, 'wb') as f:
                     pickle.dump(prev_pred, f)
 

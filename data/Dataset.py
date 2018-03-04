@@ -92,12 +92,13 @@ class Dataset():
         self.create_label_stat()
 
     def create_label_stat(self):
-        sum_label = np.log(np.sum(
-            self.labels[:, np.invert(self.not_leaf_node)], 1))
-        self.mean_label = np.mean(sum_label)
-        self.sd_label = np.std(sum_label)
+        sum_label = np.sum(
+            self.labels[:, np.invert(self.not_leaf_node)], 1)
         self.max_label = int(np.max(sum_label))
         self.min_label = int(np.min(sum_label))
+        # sum_label = np.log(sum_label)
+        self.mean_label = np.mean(sum_label)
+        self.sd_label = np.std(sum_label)
 
     def generate_batch(self, level, batch_size):
         if self.state != "embedding":

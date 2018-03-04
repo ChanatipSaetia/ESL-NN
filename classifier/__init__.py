@@ -3,3 +3,7 @@ from .LCPL_NoLabel import LCPLNoLabel
 from .LCPL_Predicted import LCPLPredicted
 from .LCPL_Embed import LCPLEmbed
 from .LCPL_Embed_Shared import LCPLEmbedShared
+from .LCPL_Predicted_no_prev_dense import LCPLPredicted_NoPrev
+from .LCPL_Shared_hidden import LCPLPredicted_Hidden
+from .LCPL_NoLabel_shared_hidden import LCPLNoLabelHidden
+from .LCPL_Predicted_hidden import LCPLPredicted_ADD
