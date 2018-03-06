@@ -89,7 +89,7 @@ class GensimDoc2Vec():
                 result += intersect / n_label
 
         return result / len(transform_data)
-    
+
     def calculate_top_k_similar(self, transform_data, labels, tag_vector):
         index = np.arange(0, len(transform_data), self.batch_size).tolist()
         index.append(len(transform_data))
@@ -141,7 +141,8 @@ class GensimDoc2Vec():
                 transform_data, labels_validate, tag_vector)
             top_k_similar = self.calculate_top_k_similar(
                 transform_data, labels_validate, tag_vector)
-            print("Epoch: %i Similar: %.5f" % ((i + 1) * each_time, top_k_similar))
+            print("Epoch: %i Similar: %.5f" %
+                  ((i + 1) * each_time, top_k_similar))
             if i >= time_before_stop:
                 if max_diff < top_k_similar:
                     max_diff = top_k_similar
@@ -156,8 +157,10 @@ class GensimDoc2Vec():
                 if is_saving:
                     self.model = Doc2Vec.load('best_now/doc2vec.model')
                 break
+            self.model.save('best_now/doc2vec_wiki_small_least/%d.model' %
+                            ((i + 1) * each_time))
 
-        return same, diff, avg_diff, top_k, top_k_similar 
+        return same, diff, avg_diff, top_k, top_k_similar
 
     def transform(self, datas):
         return np.array([self.model.infer_vector(i) for i in datas])

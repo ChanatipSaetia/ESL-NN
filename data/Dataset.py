@@ -91,6 +91,16 @@ class Dataset():
             pickle.dump([self.datas, self.labels], f)
         self.create_label_stat()
 
+    def delete_label_more(self, n):
+        new_labels = []
+        for i in self.labels:
+            s = set()
+            for j in i:
+                if j < n:
+                    s.add(j)
+            new_labels.append(s)
+        self.labels = new_labels
+
     def create_label_stat(self):
         sum_label = np.sum(
             self.labels[:, np.invert(self.not_leaf_node)], 1)
@@ -109,8 +119,7 @@ class Dataset():
         if level == -1:
             label_level = self.labels.tocsr()
         else:
-            label_level = self.labels[:, self.level[level]
-                :self.level[level + 1]].tocsr()
+            label_level = self.labels[:, self.level[level]                                      :self.level[level + 1]].tocsr()
         for i in range(len(index) - 1):
             start, end = [index[i], index[i + 1]]
             batch_datas = FloatTensor(self.datas[start:end])
