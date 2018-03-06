@@ -89,19 +89,44 @@ class GensimDoc2Vec():
                 result += intersect / n_label
 
         return result / len(transform_data)
+    
+    def calculate_top_k_similar(self, transform_data, labels, tag_vector):
+        index = np.arange(0, len(transform_data), self.batch_size).tolist()
+        index.append(len(transform_data))
+        result = 0
+        for j in range(len(index) - 1):
+            start, end = [index[j], index[j + 1]]
+            batch_data = transform_data[start:end]
+            batch_label = labels[start:end]
+            cosine = cosine_similarity(batch_data, tag_vector)
+
+            for i, label in zip(range(len(batch_data)), batch_label):
+                n_label = len(label)
+                list_label = list(label)
+                same = np.sort(cosine[i][list_label])[-n_label:]
+                list_not_same_label = list(self.all_label - set(label))
+                rand = np.random.choice(len(list_not_same_label), n_label)
+                diff = np.sort(cosine[i][list_not_same_label])[rand]
+                result += (np.mean(same) - np.mean(diff))
+
+        return result / len(transform_data)
 
     def prepare_data(self, datas, labels):
         return [TaggedDocument(
             datas[i], [str(i)] + ['class_%d' % j for j in labels[i]]) for i in range(len(datas))]
 
-    def fit(self, datas, labels, datas_validate, labels_validate, second_run=False, early_stopping=True):
+    def fit(self, datas, labels, datas_validate, labels_validate, second_run=False, early_stopping=True, one_time=False):
         documents = self.prepare_data(datas, labels)
         if not second_run:
             self.model.build_vocab(documents)
         max_diff = 0
-        each_time = int(self.epoch / 50)
-        each_time = 1 if each_time == 0 else each_time
-        time_before_stop = self.epoch / (each_time * 5)
+        if one_time:
+            each_time = self.epoch
+        else:
+            each_time = int(self.epoch / 50)
+            each_time = 1 if each_time == 0 else each_time
+        time_before_stop = self.epoch / (each_time * 8)
+        print(time_before_stop)
         c = 0
         is_saving = False
         for i in range(int(self.epoch / each_time)):
@@ -114,24 +139,25 @@ class GensimDoc2Vec():
                 transform_data, labels_validate, tag_vector)
             top_k = self.calculate_top_k(
                 transform_data, labels_validate, tag_vector)
-            print("Epoch: %i Similar: %.2f" % ((i + 1) * each_time, diff))
-            if max_diff < diff:
-                max_diff = diff
-                c = 0
-                self.model.save('best_now/doc2vec.model')
-                is_saving = True
-            elif i >= time_before_stop:
-                c = c + 1
+            top_k_similar = self.calculate_top_k_similar(
+                transform_data, labels_validate, tag_vector)
+            print("Epoch: %i Similar: %.5f" % ((i + 1) * each_time, top_k_similar))
+            if i >= time_before_stop:
+                if max_diff < top_k_similar:
+                    max_diff = top_k_similar
+                    c = 0
+                    self.model.save('best_now/doc2vec.model')
+                    is_saving = True
+                else:
+                    c = c + 1
 
-            if c >= 2 and early_stopping:
-                print("Stopping Similar: %.2f" % max_diff)
+            if c >= 3 and early_stopping:
+                print("Stopping Similar: %.5f" % max_diff)
                 if is_saving:
                     self.model = Doc2Vec.load('best_now/doc2vec.model')
                 break
 
-            self.model.save('best_now/doc2vec_wiki_small/%d.model' %
-                            ((i + 1) * each_time))
-        return same, diff, avg_diff, top_k
+        return same, diff, avg_diff, top_k, top_k_similar 
 
     def transform(self, datas):
         return np.array([self.model.infer_vector(i) for i in datas])

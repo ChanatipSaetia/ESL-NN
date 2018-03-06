@@ -53,7 +53,7 @@ class AssembleLevel():
     def pretrain_loading(self):
         pass
 
-    def train(self):
+    def train(self, verbose=True):
         self.pretrain_loading()
         for level, model in enumerate(self.classifier):
             if level > 0 and os.path.isdir('data/%s/output' % self.data_name):
@@ -94,10 +94,11 @@ class AssembleLevel():
                     labels_in = Variable(labels)
                     loss = model.train_model(datas_in, labels_in)
                     all_loss = all_loss + loss
-                    sys.stdout.write("\rLevel: %.3f Epoch: %d/%d Batch: %d/%d Loss: %.3f " %
-                                     (level + 1, epoch + 1, self.iteration, number_of_batch, all_batch,
-                                      all_loss / number_of_batch))
-                    sys.stdout.flush()
+                    if verbose:
+                        sys.stdout.write("\rLevel: %.3f Epoch: %d/%d Batch: %d/%d Loss: %.3f " %
+                                         (level + 1, epoch + 1, self.iteration, number_of_batch, all_batch,
+                                          all_loss / number_of_batch))
+                        sys.stdout.flush()
                 f1_macro, _ = self.evaluate_each_level(level, "validate")
                 con = (max_f1_macro < f1_macro)
                 each_print = int(self.iteration / 30)
@@ -115,8 +116,9 @@ class AssembleLevel():
                 if(c >= self.stopping_time and self.early_stopping):
                     train_f1_macro, _ = self.evaluate_each_level(
                         level, "train")
-                    print("Stopping F1 macro: %.3f Validate F1 macro: %.3f" %
-                          (train_f1_macro, max_f1_macro))
+                    if verbose:
+                        print("Stopping F1 macro: %.3f Validate F1 macro: %.3f" %
+                              (train_f1_macro, max_f1_macro))
                     self.classifier[level] = torch.load("best_now/%s/model_%d.model" %
                                                         (self.data_name, level))
                     break
@@ -126,8 +128,9 @@ class AssembleLevel():
                         level, "train")
                     if level > 0 and os.path.isdir('data/%s/output' % self.data_name):
                         shutil.rmtree('data/%s/output' % self.data_name)
-                    print("Training F1 macro: %.3f Validate F1 macro: %.3f" %
-                          (train_f1_macro, f1_macro))
+                    if verbose:
+                        print("Training F1 macro: %.3f Validate F1 macro: %.3f" %
+                              (train_f1_macro, f1_macro))
 
                 check = abs(previous_loss - all_loss) / number_of_batch < 0.01
                 if(check and start_batch <= self.dataset.number_of_data()):
@@ -136,7 +139,8 @@ class AssembleLevel():
                         shutil.rmtree('data/%s/output/' % self.data_name)
 
                 previous_loss = all_loss
-            print()
+            if verbose:
+                print()
 
     def evaluate_each_level(self, level, mode, threshold=0):
         if mode == "train":
