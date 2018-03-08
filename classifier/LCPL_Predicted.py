@@ -22,7 +22,7 @@ class LCPLPredicted(EachLevelClassifier):
         if self.use_dropout:
             self.dropout_input = nn.Dropout(p=0.15)
             self.dropout_prev = nn.Dropout(p=0.15)
-            self.dropout = nn.Dropout(p=0.35)
+            self.dropout = nn.Dropout(p=0.25)
         self.logit = nn.Linear(self.hidden_size, self.number_of_class)
 
     def forward(self, x):

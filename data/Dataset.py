@@ -89,7 +89,7 @@ class Dataset():
             os.makedirs('data/%s/doc2vec/' % self.data_name)
         with open('data/%s/doc2vec/data.%s.pickle' % (self.data_name, self.mode), mode='wb') as f:
             pickle.dump([self.datas, self.labels], f)
-        self.create_label_stat()
+        
 
     def delete_label_more(self, n):
         new_labels = []
