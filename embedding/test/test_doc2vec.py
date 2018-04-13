@@ -25,5 +25,5 @@ class TestDoc2vec(unittest.TestCase):
         tag_vector = np.array([[1, 1, 1], [2, 1, 2]])
         datas = np.array([[1, 2, 1], [2, 1, 2], [1, 2, 2]])
         label = np.array([set([0]), set([1]), set([0, 1])])
-        result = temp_doc2vec.calculate_similar(datas, label, tag_vector)
+        _, _, result = temp_doc2vec.calculate_similar(datas, label, tag_vector)
         self.assertAlmostEqual(0.3798891, result, 3)

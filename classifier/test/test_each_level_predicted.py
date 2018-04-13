@@ -37,7 +37,7 @@ class TestEachLevelPredicted(unittest.TestCase):
         self.dataset.change_to_Doc2Vec(doc2vec)
 
     def test_forward(self):
-        real_result = [44.0, 44.0]
+        real_result = [5.0, 5.0]
         for datas, _ in self.dataset.generate_batch(0, 1):
             prev_target = FloatTensor([[7.0, 7.0]])
             datas = torch.cat([datas, prev_target], 1)
@@ -62,7 +62,7 @@ class TestEachLevelPredicted(unittest.TestCase):
         if torch.cuda.is_available():
             self.model = self.model.cuda()
         self.model.eval()
-        real_result = [440.0, 440.0]
+        real_result = [50.0, 50.0]
         for datas, _ in self.dataset.generate_batch(0, 1):
             prev_target = FloatTensor([[7.0, 7.0]])
             datas = torch.cat([datas, prev_target], 1)
@@ -81,7 +81,7 @@ class TestEachLevelPredicted(unittest.TestCase):
         first_count = self.dataset.number_of_data_in_each_class()[
             first_index[0]:first_index[1]]
         self.model.initial_weight(number_of_data, first_count)
-        real_loss = - math.log(1 / (1 + math.exp(-44)))
+        real_loss = - math.log(1 / (1 + math.exp(-5)))
         for datas, labels in self.dataset.generate_batch(0, 3):
             prev_target = FloatTensor([[7.0, 7.0], [7.0, 7.0], [7.0, 7.0]])
             datas = torch.cat([datas, prev_target], 1)
