@@ -61,7 +61,7 @@ class AssembleLevel():
             max_f1_macro = 0
             c = 0
             if level < self.start_level:
-                self.classifier[level] = torch.load("best_now/%s/model_%d.model" %
+                self.classifier[level] = torch.load("export/%s/level_%d.model" %
                                                     (self.data_name, level))
                 continue
             else:
@@ -70,7 +70,7 @@ class AssembleLevel():
                                   (self.data_name, level))
             if level >= self.end_level:
                 break
-            torch.save(model, "best_now/%s/model_%d.model" %
+            torch.save(model, "export/%s/level_%d.model" %
                        (self.data_name, level))
             start_batch = 32
             previous_loss = 99999999
@@ -106,12 +106,10 @@ class AssembleLevel():
                 if(con):
                     max_f1_macro = f1_macro
                     c = 0
-                    torch.save(model, "best_now/%s/model_%d.model" %
+                    torch.save(model, "export/%s/level_%d.model" %
                                (self.data_name, level))
                 elif(epoch >= each_print):
                     c = c + 1
-
-                # scheduler.step(f1_macro)
 
                 if(c >= self.stopping_time and self.early_stopping):
                     train_f1_macro, _ = self.evaluate_each_level(
@@ -119,7 +117,7 @@ class AssembleLevel():
                     if verbose:
                         print("Stopping F1 macro: %.3f Validate F1 macro: %.3f" %
                               (train_f1_macro, max_f1_macro))
-                    self.classifier[level] = torch.load("best_now/%s/model_%d.model" %
+                    self.classifier[level] = torch.load("export/%s/level_%d.model" %
                                                         (self.data_name, level))
                     break
 
@@ -219,8 +217,7 @@ class AssembleLevel():
                     datas, level, number_of_batch, mode)
 
                 datas_in = Variable(datas_in, volatile=True)
-                each_level = labels[:, self.dataset.level[level]
-                    :self.dataset.level[level + 1]]
+                each_level = labels[:, self.dataset.level[level]:self.dataset.level[level + 1]]
                 if torch.cuda.is_available():
                     datas_in = datas_in.cuda()
                     each_level = each_level.cuda()
@@ -239,7 +236,6 @@ class AssembleLevel():
             if correction:
                 all_pred = self.child_based_correction(all_pred)
             tp, pcp, cp = tp_pcp(all_labels, all_pred, use_threshold=False)
-            # print(tp, all_tp)
             all_tp = all_tp + tp
             all_pcp = all_pcp + pcp
             all_cp = all_cp + cp
@@ -248,12 +244,9 @@ class AssembleLevel():
             all_tp, all_pcp, all_cp, self.dataset.number_of_classes())
         f1_each_level = []
         for level in range(self.dataset.number_of_level()):
-            each_tp = all_tp[self.dataset.level[level]
-                :self.dataset.level[level + 1]]
-            each_pcp = all_pcp[self.dataset.level[level]
-                :self.dataset.level[level + 1]]
-            each_cp = all_cp[self.dataset.level[level]
-                :self.dataset.level[level + 1]]
+            each_tp = all_tp[self.dataset.level[level]:self.dataset.level[level + 1]]
+            each_pcp = all_pcp[self.dataset.level[level]:self.dataset.level[level + 1]]
+            each_cp = all_cp[self.dataset.level[level]:self.dataset.level[level + 1]]
             each_f1_macro, each_f1_micro = f1_from_tp_pcp(
                 each_tp, each_pcp, each_cp, self.classifier[level].number_of_class)
             f1_each_level.append((each_f1_macro, each_f1_micro))
@@ -262,22 +255,11 @@ class AssembleLevel():
     def get_leaf_node(self, y):
         num_test = F.sigmoid(y).cpu().numpy()
 
-        # for l, m in enumerate(self.classifier):
-        #     first = self.dataset.level[l]
-        #     last = self.dataset.level[l + 1]
-        #     num_test[:, first:last] = num_test[:, first:last]
-
-        # for h in self.dataset.hierarchy:
-        #     child = list(self.dataset.hierarchy[h])
-        #     num_test[:, child] = num_test[:, child] * \
-        #         np.repeat(num_test[:, h:h + 1], len(child), axis=1)
-
         only_leaf = num_test * \
             np.invert(self.dataset.not_leaf_node).astype(float)
         del num_test
         indice_sort = only_leaf.argsort()
         indice_sort = indice_sort[:, -self.dataset.max_label:]
-        print(only_leaf)
         distribution = np.sum(
             np.array(list(map((lambda x, y: x[y]), only_leaf, indice_sort))), 1)
         mean_dis = np.mean(distribution)
@@ -287,11 +269,9 @@ class AssembleLevel():
             lambda d: ((d - mean_dis) / sd_dis) *
             self.dataset.sd_label + self.dataset.mean_label + 3,
             0, distribution)).astype(int)
-        # leaf_in_each_row = np.repeat(1, len(indice_sort)).astype(int)
         min_leaf = self.dataset.min_label if self.dataset.min_label >= 1 else 1
         ans_index = list(
             map((lambda x, y: x[-y:] if y >= min_leaf else x[-min_leaf:]), indice_sort, leaf_in_each_row))
-        # print(ans_index)
         return ans_index
 
     def to_one_hot(self, ans_index):
@@ -309,51 +289,61 @@ class AssembleLevel():
         elif mode == "test":
             evaluated_data = self.dataset_test
 
+        if not os.path.exists("export/%s/prediction" % (self.data_name)):
+            os.makedirs("export/%s/prediction" % (self.data_name))
+        if not os.path.exists("export/%s/probability_prediction" % (self.data_name)):
+            os.makedirs("export/%s/probability_prediction" % (self.data_name))
+        np_all_name = np.array(self.dataset.all_name)
+        f = open("export/%s/prediction/%s.txt" % (self.data_name, mode), 'w')
+        f2 = open("export/%s/probability_prediction/%s.txt" %
+                  (self.data_name, mode), 'w')
+
         number_of_batch = 0
         for datas, labels in evaluated_data.generate_batch(-1, self.batch_size):
 
             number_of_batch = number_of_batch + 1
             all_labels = FloatTensor([])
-            if mandatory_leaf:
-                all_pred = FloatTensor([])
-            else:
+            if not mandatory_leaf:
                 all_pred = ByteTensor([])
+            all_prob = FloatTensor([])
             if torch.cuda.is_available():
                 all_labels = all_labels.cuda()
-                all_pred = all_pred.cuda()
+                all_prob = all_prob.cuda()
+                if not mandatory_leaf:
+                    all_pred = all_pred.cuda()
             for level in range(self.dataset.number_of_level()):
                 datas_in = self.input_classifier(
                     datas, level, number_of_batch, mode)
 
                 datas_in = Variable(datas_in, volatile=True)
-                each_level = labels[:, self.dataset.level[level]                                    :self.dataset.level[level + 1]]
+                each_level = labels[:, self.dataset.level[level]
+                    :self.dataset.level[level + 1]]
                 if torch.cuda.is_available():
                     datas_in = datas_in.cuda()
                     each_level = each_level.cuda()
-                if mandatory_leaf:
-                    pred = self.classifier[level](
-                        datas_in).data
-                else:
+                prob = self.classifier[level](
+                    datas_in).data
+                all_prob = torch.cat((all_prob, prob), 1)
+
+                all_labels = torch.cat((all_labels, each_level), 1)
+
+                if not mandatory_leaf:
                     pred = self.classifier[level].output_with_threshold(
                         datas_in).data
-                all_labels = torch.cat((all_labels, each_level), 1)
-                all_pred = torch.cat((all_pred, pred), 1)
+                    all_pred = torch.cat((all_pred, pred), 1)
 
             if mandatory_leaf:
-                all_pred = self.get_leaf_node(all_pred)
+                all_pred = self.get_leaf_node(all_prob)
             else:
                 all_pred = self.child_based_correction(all_pred)
                 all_pred = self.select_deepest_label(all_pred)
-                # all_pred = self.to_one_hot(all_pred)
-            # if correction:
+            for p in all_pred:
+                f.write(" ".join(np_all_name[p]) + "\n")
+            for p in F.sigmoid(all_prob).cpu().numpy():
+                f2.write(" ".join(map(str, p)) + "\n")
 
-            if not os.path.exists("export/%s/%s" % (self.data_name, mode)):
-                os.makedirs("export/%s/%s" % (self.data_name, mode))
-            np_all_name = np.array(self.dataset.all_name)
-            with open("export/%s/%s/result.txt" % (self.data_name, mode), 'a') as f:
-                for p in all_pred:
-                    f.write(" ".join(np_all_name[p]) + "\n")
-                f.close()
+        f.close()
+        f2.close()
 
     def child_based_correction(self, y):
         if type(y) != np.ndarray:

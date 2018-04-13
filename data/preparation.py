@@ -122,6 +122,43 @@ def save_data_in_pickle(file_name, datas, labels):
 
 
 def split_data(datas, labels, data_name):
+    directory = "data/%s/store" % data_name
+    if not os.path.exists(directory):
+        os.makedirs(directory)
+    datas = np.array(datas)
+    labels = np.array(labels)
+    all_train_data, test_data, all_train_target, test_target = train_test_split(
+        datas, labels, test_size=0.1, random_state=12345)
+    train_data, validate_data, train_target, validate_target = train_test_split(
+        all_train_data, all_train_target, test_size=0.1, random_state=12345)
+    with open('data/%s/store/data.pickle.train' % (data_name), 'wb') as f:
+        pickle.dump([train_data, train_target], f)
+        f.close()
+    with open('data/%s/store/data.pickle.validate' % (data_name), 'wb') as f:
+        pickle.dump([validate_data, validate_target], f)
+        f.close()
+    with open('data/%s/store/data.pickle.test' % (data_name), 'wb') as f:
+        pickle.dump([test_data, test_target], f)
+        f.close()
+
+
+def split_validate_data(datas, labels, data_name):
+    directory = "data/%s/store" % data_name
+    if not os.path.exists(directory):
+        os.makedirs(directory)
+    datas = np.array(datas)
+    labels = np.array(labels)
+    train_data, validate_data, train_target, validate_target = train_test_split(
+        datas, labels, test_size=0.1, random_state=12345)
+    with open('data/%s/store/data.pickle.train' % (data_name), 'wb') as f:
+        pickle.dump([train_data, train_target], f)
+        f.close()
+    with open('data/%s/store/data.pickle.validate' % (data_name), 'wb') as f:
+        pickle.dump([validate_data, validate_target], f)
+        f.close()
+
+
+def split_fold_data(datas, labels, data_name):
     directory = "data/%s/fold" % data_name
     if not os.path.exists(directory):
         os.makedirs(directory)

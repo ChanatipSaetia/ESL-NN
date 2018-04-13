@@ -139,7 +139,7 @@ class PreparationUnitTest(unittest.TestCase):
         new_labels = preparation.map_index_of_label(
             hierarchy_file_name, labels)
         data_name = "test"
-        preparation.split_data(datas, new_labels, data_name)
+        preparation.split_fold_data(datas, new_labels, data_name)
         for i in range(5):
             name = "test/fold/data_%d.pickle.%s" % (i + 1, "train")
             train, train_label = preparation.load_data_in_pickle(name)

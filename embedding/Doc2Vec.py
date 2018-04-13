@@ -9,8 +9,9 @@ from sklearn.model_selection import train_test_split
 
 class GensimDoc2Vec():
 
-    def __init__(self, number_of_class, alpha=0.001, size=25, dm=0, window=8, min_count=3, epoch=200, batch_size=1000):
+    def __init__(self, data_name, number_of_class, alpha=0.001, size=25, dm=0, window=8, min_count=3, epoch=200, batch_size=1000):
         print("Doc2Vec by Gensim")
+        self.data_name = data_name
         self.alpha = alpha
         self.dm = dm
         self.window = window
@@ -87,7 +88,6 @@ class GensimDoc2Vec():
             each_time = int(self.epoch / 50)
             each_time = 1 if each_time == 0 else each_time
         time_before_stop = self.epoch / (each_time * 8)
-        print(time_before_stop)
         c = 0
         is_saving = False
         for i in range(int(self.epoch / each_time)):
@@ -104,7 +104,8 @@ class GensimDoc2Vec():
                 if max_diff < avg_diff:
                     max_diff = avg_diff
                     c = 0
-                    self.model.save('best_now/doc2vec.model')
+                    self.model.save(
+                        'export/%s/doc2vec.model' % self.data_name)
                     is_saving = True
                 else:
                     c = c + 1
@@ -112,10 +113,9 @@ class GensimDoc2Vec():
             if c >= 3 and early_stopping:
                 print("Stopping Similar: %.5f" % max_diff)
                 if is_saving:
-                    self.model = Doc2Vec.load('best_now/doc2vec.model')
+                    self.model = Doc2Vec.load(
+                        'export/%s/doc2vec.model' % self.data_name)
                 break
-           # self.model.save('best_now/doc2vec_wiki_small_least/%d.model' %
-           #                 ((i + 1) * each_time))
 
         return same, diff, avg_diff
 

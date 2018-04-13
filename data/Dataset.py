@@ -13,16 +13,16 @@ from data.exception import NotEmbeddingState
 
 class Dataset():
 
-    def __init__(self, data_name, fold_number=1, mode="train", state="first", sequence=False):
+    def __init__(self, data_name, mode="train", fold_number=0, state="first", sequence=True, test_split=True):
         self.data_name = data_name
         self.fold_number = fold_number
         self.mode = mode
         self.data_type = "index"
         self.state = state
         self.sequence = sequence
+        self.test_split = test_split
         self.load_hierarchy()
         self.load_datas()
-        # sparse data
 
     def load_hierarchy(self):
         if not os.path.isfile("data/%s/hierarchy.pickle" % self.data_name):
@@ -35,31 +35,44 @@ class Dataset():
         self.not_leaf_node = np.array([i in list(
             self.hierarchy.keys()) for i in range(self.number_of_classes())])
 
-        # self.leaf_node = {}
-        # for i in range(self.number_of_level() - 1):
-        #     i = self.number_of_level() - i - 2
-        #     level_range = range(self.level[i], self.level[i + 1])
-        #     for p in level_range:
-        #         if self.not_leaf_node[p]:
-        #             self.leaf_node[p] = reduce((lambda x, y: x | y), [
-        #                                        self.leaf_node[i] if i in self.leaf_node else {i} for i in self.hierarchy[p]])
-
     def load_datas(self):
         if self.state == 'embedding':
             with open('data/%s/doc2vec/data.%s.pickle' % (self.data_name, self.mode), mode='rb') as f:
                 self.datas, self.labels = pickle.load(f)
             self.create_label_stat()
             return
-        if not os.path.isfile("data/%s/fold/data_%d.pickle.%s" %
-                              (self.data_name, self.fold_number, self.mode)):
-            file_name = "%s/data.txt" % (self.data_name)
+
+        if self.fold_number == 0:
+            store_name = "%s/store/data.pickle.%s" % (
+                self.data_name, self.mode)
+        else:
+            store_name = "%s/fold/data_%d.pickle.%s" % (
+                self.data_name, self.fold_number, self.mode)
+
+        if not os.path.isfile("data/" + store_name):
+            if not self.test_split:
+                file_name = "%s/%s.txt" % (self.data_name,
+                                           self.mode)
+            else:
+                file_name = "%s/data.txt" % (self.data_name)
             datas, labels = prep.import_data(file_name, sequence=self.sequence)
             hierarchy_file_name = "%s/hierarchy.pickle" % self.data_name
             new_labels = prep.map_index_of_label(
                 hierarchy_file_name, labels)
-            prep.split_data(datas, new_labels, self.data_name)
-        self.datas, self.labels = prep.load_data_in_pickle(
-            "%s/fold/data_%d.pickle.%s" % (self.data_name, self.fold_number, self.mode))
+            if not self.test_split:
+                if self.mode == "train":
+                    prep.split_validate_data(
+                        datas, new_labels, self.data_name)
+                else:
+                    with open('data/' + store_name, 'wb') as f:
+                        pickle.dump([datas, new_labels], f)
+                        f.close()
+            else:
+                if self.fold_number == 0:
+                    prep.split_data(datas, new_labels, self.data_name)
+                else:
+                    prep.split_fold_data(datas, new_labels, self.data_name)
+        self.datas, self.labels = prep.load_data_in_pickle(store_name)
 
     def number_of_level(self):
         return len(self.level) - 1
@@ -85,11 +98,12 @@ class Dataset():
         self.state = "embedding"
         self.labels = csr_matrix((data_one, indice, indptr),
                                  shape=(len(self.labels), len(self.all_name))).tocsc()
-        if not os.path.exists('data/%s/doc2vec/' % self.data_name):
-            os.makedirs('data/%s/doc2vec/' % self.data_name)
-        with open('data/%s/doc2vec/data.%s.pickle' % (self.data_name, self.mode), mode='wb') as f:
-            pickle.dump([self.datas, self.labels], f)
-        
+        if not os.path.exists('export/%s/doc2vec/' % self.data_name):
+            os.makedirs('export/%s/doc2vec/' % self.data_name)
+        with open('export/%s/doc2vec/%s.txt' % (self.data_name, self.mode), mode='w') as f:
+            for i in self.datas:
+                f.write(' '.join(map(str, i)) + '\n')
+        self.create_label_stat()
 
     def delete_label_more(self, n):
         new_labels = []
@@ -119,7 +133,8 @@ class Dataset():
         if level == -1:
             label_level = self.labels.tocsr()
         else:
-            label_level = self.labels[:, self.level[level]                                      :self.level[level + 1]].tocsr()
+            label_level = self.labels[:, self.level[level]
+                :self.level[level + 1]].tocsr()
         for i in range(len(index) - 1):
             start, end = [index[i], index[i + 1]]
             batch_datas = FloatTensor(self.datas[start:end])
