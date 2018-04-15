@@ -1,6 +1,7 @@
 ---
 layout: category
 title: Download
+category: 2
 ---
 
 * [Source Code](https://github.com/ChanatipSaetia/ESL-NN)
