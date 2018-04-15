@@ -1,1 +1,4 @@
-theme: jekyll-theme-leap-day
+theme: jekyll-theme-tactile
+
+title: Encoded Sharing Layers Neural Network (ESL-NN)
+description: "Hierarchical Multi-Label Classification System" based on [PyTorch](http://pytorch.org/)
