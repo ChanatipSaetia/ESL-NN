@@ -25,5 +25,3 @@ Perapon Vateekul, Piyapan Poomsirivilai, and Thanawut Ananpiriyakul, "Label Corr
 
 1. Peerapon Vateekul (Supervisor)
 2. Chanatip Saetia
-
-
