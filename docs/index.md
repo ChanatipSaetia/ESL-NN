@@ -1,5 +1,3 @@
-{% include header.html %}
-
 # Overview
 ESL-NN is a "Hierarchical Multi-Label Classification System" based on [PyTorch](http://pytorch.org/) which is free for download and free for non-commecial use.
 
