@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # Dependencies
 markdown:         kramdown
 highlighter:      rouge
@@ -35,3 +36,8 @@ sidebar_home_link:  true
                                 # to enable a separate blog link.
 github:
   repo:             https://github.com/fongandrew/hydeout
+=======
+title: Encoded Sharing Layers Neural Network (ESL-NN)
+description: Hierarchical Multi-Label Classification System based on Pytorch
+remote-theme: lorepirri/cayman-blog
+>>>>>>> 48512e5e45736015be26db009c317765393ed289
