@@ -217,7 +217,8 @@ class AssembleLevel():
                     datas, level, number_of_batch, mode)
 
                 datas_in = Variable(datas_in, volatile=True)
-                each_level = labels[:, self.dataset.level[level]:self.dataset.level[level + 1]]
+                each_level = labels[:, self.dataset.level[level]
+                    :self.dataset.level[level + 1]]
                 if torch.cuda.is_available():
                     datas_in = datas_in.cuda()
                     each_level = each_level.cuda()
@@ -244,9 +245,12 @@ class AssembleLevel():
             all_tp, all_pcp, all_cp, self.dataset.number_of_classes())
         f1_each_level = []
         for level in range(self.dataset.number_of_level()):
-            each_tp = all_tp[self.dataset.level[level]:self.dataset.level[level + 1]]
-            each_pcp = all_pcp[self.dataset.level[level]:self.dataset.level[level + 1]]
-            each_cp = all_cp[self.dataset.level[level]:self.dataset.level[level + 1]]
+            each_tp = all_tp[self.dataset.level[level]
+                :self.dataset.level[level + 1]]
+            each_pcp = all_pcp[self.dataset.level[level]
+                :self.dataset.level[level + 1]]
+            each_cp = all_cp[self.dataset.level[level]
+                :self.dataset.level[level + 1]]
             each_f1_macro, each_f1_micro = f1_from_tp_pcp(
                 each_tp, each_pcp, each_cp, self.classifier[level].number_of_class)
             f1_each_level.append((each_f1_macro, each_f1_micro))
@@ -281,7 +285,7 @@ class AssembleLevel():
         return csr_matrix((data_one, indice, indptr), shape=(
             len(ans_index), self.dataset.number_of_classes())).toarray()
 
-    def export_result(self, mode, correction=True, mandatory_leaf=False):
+    def export_result(self, mode, correction=True, mandatory_leaf=False, file_name=""):
         if mode == "train":
             evaluated_data = self.dataset
         elif mode == "validate":
@@ -289,14 +293,18 @@ class AssembleLevel():
         elif mode == "test":
             evaluated_data = self.dataset_test
 
+        if file_name == "":
+            file_name = mode
+
         if not os.path.exists("export/%s/prediction" % (self.data_name)):
             os.makedirs("export/%s/prediction" % (self.data_name))
         if not os.path.exists("export/%s/probability_prediction" % (self.data_name)):
             os.makedirs("export/%s/probability_prediction" % (self.data_name))
         np_all_name = np.array(self.dataset.all_name)
-        f = open("export/%s/prediction/%s.txt" % (self.data_name, mode), 'w')
+        f = open("export/%s/prediction/%s.txt" %
+                 (self.data_name, file_name), 'w')
         f2 = open("export/%s/probability_prediction/%s.txt" %
-                  (self.data_name, mode), 'w')
+                  (self.data_name, file_name), 'w')
 
         number_of_batch = 0
         for datas, labels in evaluated_data.generate_batch(-1, self.batch_size):
@@ -316,8 +324,7 @@ class AssembleLevel():
                     datas, level, number_of_batch, mode)
 
                 datas_in = Variable(datas_in, volatile=True)
-                each_level = labels[:, self.dataset.level[level]
-                    :self.dataset.level[level + 1]]
+                each_level = labels[:, self.dataset.level[level]                                    :self.dataset.level[level + 1]]
                 if torch.cuda.is_available():
                     datas_in = datas_in.cuda()
                     each_level = each_level.cuda()
@@ -380,6 +387,7 @@ class AssembleLevel():
         return num_test
 
     def tuning_threshold(self):
+        threshold = []
         for level, model in enumerate(self.classifier):
             if level >= self.end_level:
                 break
@@ -390,5 +398,12 @@ class AssembleLevel():
                 if max_f1_macro < f1_macro:
                     best_threshold = t
                     max_f1_macro = f1_macro
+            threshold.append(best_threshold)
             model.best_threshold = best_threshold
             model.change_ratio = 0.5 / best_threshold
+        return threshold
+
+    def apply_threshold(self, threshold):
+        for level, model in enumerate(self.classifier):
+            model.best_threshold = threshold[level]
+            model.change_ratio = 0.5 / threshold[level]

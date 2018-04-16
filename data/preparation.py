@@ -13,7 +13,11 @@ import data.hierarchy as hie
 
 
 def import_each_row(row):
-    label, data = row.strip().split(":")
+    split_row = row.strip().split(":")
+    label = split_row[0]
+    data = split_row[1]
+    if len(split_row) > 2:
+        data = data + ':' + ":".join(split_row[2:len(split_row)])
     if data[1:-1] == "":
         raise ex.NoFeatureInRow
     data = data[1:-1].split(",")

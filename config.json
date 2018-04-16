@@ -1,0 +1,15 @@
+{
+    "data_name": "wipo_d",
+    "train_file_name": "data.txt",
+    "test_file_name": "test.txt",
+    "classification_type": "hierarchical",
+    "test_split": false,
+    "predict_test": false,
+    "evaluate_test": false,
+    "correction": true,
+    "mandatory_leaf": false,
+    "hidden": "auto",
+    "target_hidden": "auto",
+    "embedding_size": 150,
+    "embedding_type": "OPD"
+}

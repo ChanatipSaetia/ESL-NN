@@ -13,7 +13,7 @@ from data.exception import NotEmbeddingState
 
 class Dataset():
 
-    def __init__(self, data_name, mode="train", fold_number=0, state="first", sequence=True, test_split=True):
+    def __init__(self, data_name, mode="train", fold_number=0, state="first", sequence=True, test_split=True, classification_type="hierarchical", data_file_name="data.txt"):
         self.data_name = data_name
         self.fold_number = fold_number
         self.mode = mode
@@ -21,19 +21,36 @@ class Dataset():
         self.state = state
         self.sequence = sequence
         self.test_split = test_split
+        self.classification_type = classification_type
+        self.data_file_name = data_file_name
         self.load_hierarchy()
         self.load_datas()
 
     def load_hierarchy(self):
         if not os.path.isfile("data/%s/hierarchy.pickle" % self.data_name):
-            hierarchy, parent_of, all_name, name_to_index, level = hie.reindex_hierarchy(
-                '%s/hierarchy.txt' % self.data_name)
-            hie.save_hierarchy("%s/hierarchy.pickle" % self.data_name, hierarchy,
-                               parent_of, all_name, name_to_index, level)
+            if self.classification_type == 'hierarchical':
+                hierarchy, parent_of, all_name, name_to_index, level = hie.reindex_hierarchy(
+                    '%s/hierarchy.txt' % self.data_name)
+                hie.save_hierarchy("%s/hierarchy.pickle" % self.data_name, hierarchy,
+                                   parent_of, all_name, name_to_index, level)
+            else:
+                return
         self.hierarchy, self.parent_of, self.all_name, self.name_to_index, self.level = hie.load_hierarchy(
             "%s/hierarchy.pickle" % self.data_name)
         self.not_leaf_node = np.array([i in list(
             self.hierarchy.keys()) for i in range(self.number_of_classes())])
+
+    def create_temp_hierarchy(self, all_name):
+        if self.classification_type != 'hierarchical':
+            name_to_index = {}
+            for i, n in enumerate(all_name):
+                name_to_index[n] = i
+            hie.save_hierarchy("%s/hierarchy.pickle" % self.data_name, {},
+                               {}, all_name, name_to_index, [0, len(all_name)])
+            self.hierarchy, self.parent_of, self.all_name, self.name_to_index, self.level = hie.load_hierarchy(
+                "%s/hierarchy.pickle" % self.data_name)
+            self.not_leaf_node = np.array([i in list(
+                self.hierarchy.keys()) for i in range(self.number_of_classes())])
 
     def load_datas(self):
         if self.state == 'embedding':
@@ -41,7 +58,6 @@ class Dataset():
                 self.datas, self.labels = pickle.load(f)
             self.create_label_stat()
             return
-
         if self.fold_number == 0:
             store_name = "%s/store/data.pickle.%s" % (
                 self.data_name, self.mode)
@@ -51,11 +67,14 @@ class Dataset():
 
         if not os.path.isfile("data/" + store_name):
             if not self.test_split:
-                file_name = "%s/%s.txt" % (self.data_name,
-                                           self.mode)
+                file_name = "%s/%s" % (self.data_name,
+                                       self.data_file_name)
             else:
-                file_name = "%s/data.txt" % (self.data_name)
+                file_name = "%s/%s" % (self.data_name,
+                                       self.data_file_name)
             datas, labels = prep.import_data(file_name, sequence=self.sequence)
+            self.create_temp_hierarchy(
+                list(set([j for i in labels for j in i])))
             hierarchy_file_name = "%s/hierarchy.pickle" % self.data_name
             new_labels = prep.map_index_of_label(
                 hierarchy_file_name, labels)
@@ -64,6 +83,9 @@ class Dataset():
                     prep.split_validate_data(
                         datas, new_labels, self.data_name)
                 else:
+                    directory = "data/%s/store" % self.data_name
+                    if not os.path.exists(directory):
+                        os.makedirs(directory)
                     with open('data/' + store_name, 'wb') as f:
                         pickle.dump([datas, new_labels], f)
                         f.close()

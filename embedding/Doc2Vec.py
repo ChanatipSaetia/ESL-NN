@@ -98,8 +98,8 @@ class GensimDoc2Vec():
             transform_data = self.transform(datas_validate)
             same, diff, avg_diff = self.calculate_similar(
                 transform_data, labels_validate, tag_vector)
-            print("Epoch: %i Similar: %.5f" %
-                  ((i + 1) * each_time, avg_diff))
+            print("Epoch: %i" %
+                  ((i + 1) * each_time))
             if i >= time_before_stop:
                 if max_diff < avg_diff:
                     max_diff = avg_diff
@@ -111,7 +111,7 @@ class GensimDoc2Vec():
                     c = c + 1
 
             if c >= 3 and early_stopping:
-                print("Stopping Similar: %.5f" % max_diff)
+                # print("Stopping Similar: %.5f" % max_diff)
                 if is_saving:
                     self.model = Doc2Vec.load(
                         'export/%s/doc2vec.model' % self.data_name)
