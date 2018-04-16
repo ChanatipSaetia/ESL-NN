@@ -3,6 +3,8 @@ layout: index
 title: Home
 ---
 
+![alt text](https://raw.githubusercontent.com/ChanatipSaetia/ESL-NN/master/docs/lab_logo.jpg "Logo Title Text 1")
+
 # Overview
 ESL-NN is a "Hierarchical Text Categorization System" based on [PyTorch](http://pytorch.org/) which is free for download and free for non-commecial use.
 
@@ -26,3 +28,6 @@ Perapon Vateekul, Piyapan Poomsirivilai, and Thanawut Ananpiriyakul, "Label Corr
 
 1. Peerapon Vateekul (Supervisor)
 2. Chanatip Saetia
+
+# Related Works
+* [HR-SVM Project](https://sites.google.com/site/hrsvmproject/) - a "Hierarchical Multi-Label Classification System" based on LIBSVM and HEMKit
