@@ -3,7 +3,7 @@ layout: index
 title: Home
 ---
 
-![alt text](https://raw.githubusercontent.com/ChanatipSaetia/ESL-NN/master/docs/lab_logo.jpg "Logo Title Text 1")
+<img src="https://raw.githubusercontent.com/ChanatipSaetia/ESL-NN/master/docs/lab_logo.jpg" width="400">
 
 # Overview
 ESL-NN is a "Hierarchical Text Categorization System" based on [PyTorch](http://pytorch.org/) which is free for download and free for non-commecial use.
