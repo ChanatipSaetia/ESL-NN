@@ -17,12 +17,8 @@ ESL-NN is a "Hierarchical Text Categorization System" based on [PyTorch](http://
 * Linux
 
 ## Publications
-Official ESL-NN algorithm:
+**Official ESL-NN algorithm:**<br>
 Peerapon Vateekul and Chanatip Saetia, “Enhance Accuracy of Hierarchical Text Categorization Based on Deep Learning Network Using Embedding Strategies,” Computer Science and Software Engineering (JCSSE), 2018 15th International Joint Conference on. IEEE, 2018. (In review process).
-<!-- 
-## Other implementation details:
-Perapon Vateekul, Piyapan Poomsirivilai, and Thanawut Ananpiriyakul, "An Implementation of Hierarchical Multi-Label Classification using Support Vector Machine", The 2014 IEEE Thailand Student Conference on Senior Capstone Project, 2014.
-Perapon Vateekul, Piyapan Poomsirivilai, and Thanawut Ananpiriyakul, "Label Correction Strategy on Hierarchical Multi-Label Classification", MLDM 2014 : International Conference on Machine Learning and Data Mining, 2014. -->
 
 # Team Members
 
