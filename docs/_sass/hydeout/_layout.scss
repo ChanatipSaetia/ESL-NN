@@ -273,13 +273,13 @@ body {
   bottom of the sidebar in tablets and up.
 ----------------------------------------------------------- */
 
-@if $sidebar-sticky {
-  @media (min-width: $large-breakpoint) {
-    body {
-      // align-items: flex-end;
-    }
-  }
-}
+// @if $sidebar-sticky {
+//   @media (min-width: $large-breakpoint) {
+//     body {
+//       // align-items: flex-end;
+//     }
+//   }
+// }
 
 
 /* -----------------------------------------------------------
