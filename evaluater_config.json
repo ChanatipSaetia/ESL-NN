@@ -1,4 +1,4 @@
 {
-    "data_name": "wipo_d",
+    "train_model_folder": "wipo_d",
     "file_name": "test.txt"
 }

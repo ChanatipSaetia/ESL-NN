@@ -10,6 +10,5 @@
     "mandatory_leaf": false,
     "hidden": "auto",
     "target_hidden": "auto",
-    "embedding_size": 150,
-    "embedding_type": "OPD"
+    "embedding_size": 150
 }
