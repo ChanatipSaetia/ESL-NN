@@ -14,6 +14,7 @@ ESL-NN is a "Hierarchical Text Categorization System" based on [PyTorch](http://
 * Hierarchical multi-label classification with tree and DAG structure.
 
 # Supported Platforms
+* MacOS
 * Linux
 
 ## Publications
