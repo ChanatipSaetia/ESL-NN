@@ -46,7 +46,7 @@ data/
 2. Config the classifier by edit `config.json`. The configuration setting is explained in Configuration section
 3. Open a terminal and run
 ~~~~
-./classifier/Predictor
+./classifier/Train
 ~~~~
 4. After the system is finished, the all result file will store in the `export/<your_dataset_name>` folder. In the folder will store this following file.
     * `result.txt` - store the evaluation result in term of f1 macro and micro
@@ -61,7 +61,7 @@ data/
 2. Config the classifier by edit `evaluater_config.json`. The configuration setting is explained in Configuration section
 3. Open a terminal and run
 ~~~~
-./classifier/Evaluater
+./classifier/Test
 ~~~~
 4. After the system is finished, the evaluation result file will store in the `export/<your_train_model_folder>` folder. In the folder will store this following file.
     * `result_<your_file_name>.txt` - store the evaluation result in term of f1 macro and micro
