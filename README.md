@@ -10,6 +10,7 @@ ESL-NN is a "Hierarchical Multi-Label Classification System" based on [PyTorch](
 
 ## Supported Platforms
 * Linux
+* MACOS
 
 ## Team Members
 
