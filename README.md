@@ -17,3 +17,10 @@ ESL-NN is a "Hierarchical Multi-Label Classification System" based on [PyTorch](
 2. Chanatip Saetia
 
 # Folder structure
+- ``/assemble_classifier`` - Main classifiers code which store ESLNN, SHLNN, HMCLMLP
+- ``/classifier`` - Classifiers of each level code which will be composed together in main classifiers in ``/assemble_classifier``
+- ``/data`` - Data preprocessing code and Dataset class which is specifically used for our main classifier
+- ``/embedding`` - Document embedding code
+- ``/evaluation`` - Evaluation metric code
+- ``Train.ipynb`` - A demo jupyter notebook for a training process
+- ``Test.ipynb`` - A demo jupyter notebook for a testing process
