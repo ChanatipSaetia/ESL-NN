@@ -5,12 +5,12 @@ from torch import nn, optim
 from classifier import EachLevelClassifier
 
 
-class LCPLPredicted_NoPrev(EachLevelClassifier):
+class LCPL_SHLNN(EachLevelClassifier):
 
     def __init__(self, input_size, previous_number_of_class, hidden_size, number_of_class, use_dropout=True, learning_rate=0.001):
         self.hidden_size = hidden_size
         self.previous_number_of_class = previous_number_of_class
-        super(LCPLPredicted_NoPrev, self).__init__(input_size,
+        super(LCPLPredicted_Hidden, self).__init__(input_size,
                                                    number_of_class, use_dropout, learning_rate)
 
     def initial_structure(self):
@@ -21,6 +21,17 @@ class LCPLPredicted_NoPrev(EachLevelClassifier):
             self.dropout_prev = nn.Dropout(p=0.15)
             self.dropout = nn.Dropout(p=0.25)
         self.logit = nn.Linear(self.hidden_size, self.number_of_class)
+
+    def forward_hidden(self, x):
+        start_target = x.size()[1] - self.previous_number_of_class
+        prev = x[:, start_target:]
+        real_x = x[:, :start_target]
+        if self.use_dropout:
+            prev = self.dropout_prev(prev)
+            real_x = self.dropout_input(real_x)
+        x = torch.cat([prev, real_x], 1)
+        x = F.relu(self.dense(x))
+        return x
 
     def forward(self, x):
         start_target = x.size()[1] - self.previous_number_of_class

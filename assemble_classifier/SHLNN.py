@@ -1,5 +1,5 @@
 from assemble_classifier import AssembleLevel
-from classifier import LCPLNoLabel, LCPLPredicted_Hidden, LCPLNoLabelHidden
+from classifier import LCPL_SHLNN, LCPL_SHLNN_First
 import torch
 from torch.autograd import Variable
 from torch import FloatTensor
@@ -7,11 +7,11 @@ import os
 import pickle
 
 
-class AssemblePredictedHidden(AssembleLevel):
+class SHLNN(AssembleLevel):
 
     def __init__(self, data_name, dataset, dataset_validate, dataset_test, iteration, batch_size, hidden_size, learning_rate=0.001, use_dropout=True, early_stopping=True, stopping_time=500, start_level=0, end_level=10000):
-        super(AssemblePredictedHidden, self).__init__(data_name, dataset, dataset_validate, dataset_test, iteration, batch_size,
-                                                      hidden_size, learning_rate, use_dropout, early_stopping, stopping_time, start_level, end_level)
+        super(SHLNN, self).__init__(data_name, dataset, dataset_validate, dataset_test, iteration, batch_size,
+                                    hidden_size, learning_rate, use_dropout, early_stopping, stopping_time, start_level, end_level)
 
     def initial_classifier(self):
         torch.manual_seed(12345)
@@ -32,7 +32,7 @@ class AssemblePredictedHidden(AssembleLevel):
         input_size = self.dataset.size_of_feature()
         number_of_class = self.dataset.check_each_number_of_class(level)
         hidden = number_of_class * 2 if number_of_class * 2 <= 300 else 300
-        model = LCPLNoLabelHidden(
+        model = LCPL_SHLNN_First(
             input_size, hidden, number_of_class, use_dropout=self.use_dropout, learning_rate=self.learning_rate)
         if torch.cuda.is_available():
             model = model.cuda()
@@ -44,7 +44,7 @@ class AssemblePredictedHidden(AssembleLevel):
         prev_number_of_class = self.classifier[level - 1].hidden_size
         number_of_class = self.dataset.check_each_number_of_class(level)
         hidden = number_of_class * 2 if number_of_class * 2 <= 300 else 300
-        model = LCPLPredicted_Hidden(
+        model = LCPL_SHLNN(
             input_size, prev_number_of_class, hidden, number_of_class, use_dropout=self.use_dropout, learning_rate=self.learning_rate)
         if torch.cuda.is_available():
             model = model.cuda()

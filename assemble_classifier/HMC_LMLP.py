@@ -1,5 +1,5 @@
 from assemble_classifier import AssembleLevel
-from classifier import LCPLPredicted, LCPLNoLabel
+from classifier import LCPL_ESLNN_First, LCPL_HMC_LMLP
 import torch
 from torch.autograd import Variable
 from torch import FloatTensor
@@ -7,12 +7,11 @@ import os
 import pickle
 
 
-class AssemblePredicted(AssembleLevel):
+class HMC_LMLP(AssembleLevel):
 
-    def __init__(self, data_name, dataset, dataset_validate, dataset_test, iteration, batch_size, hidden_size, target_hidden_size, learning_rate=0.001, use_dropout=True, early_stopping=True, stopping_time=500, start_level=0, end_level=10000):
-        self.target_hidden_size = target_hidden_size
-        super(AssemblePredicted, self).__init__(data_name, dataset, dataset_validate, dataset_test, iteration, batch_size,
-                                                hidden_size, learning_rate, use_dropout, early_stopping, stopping_time, start_level, end_level)
+    def __init__(self, data_name, dataset, dataset_validate, dataset_test, iteration, batch_size, hidden_size, learning_rate=0.001, use_dropout=True, early_stopping=True, stopping_time=500, start_level=0, end_level=10000):
+        super(HMC_LMLP, self).__init__(data_name, dataset, dataset_validate, dataset_test, iteration, batch_size,
+                                       hidden_size, learning_rate, use_dropout, early_stopping, stopping_time, start_level, end_level)
 
     def initial_classifier(self):
         torch.manual_seed(12345)
@@ -32,7 +31,7 @@ class AssemblePredicted(AssembleLevel):
         # create classifier
         input_size = self.dataset.size_of_feature()
         number_of_class = self.dataset.check_each_number_of_class(level)
-        model = LCPLNoLabel(
+        model = LCPL_ESLNN_First(
             input_size, self.hidden_size[level], number_of_class, use_dropout=self.use_dropout, learning_rate=self.learning_rate)
         if torch.cuda.is_available():
             model = model.cuda()
@@ -44,8 +43,8 @@ class AssemblePredicted(AssembleLevel):
         prev_number_of_class = self.dataset.number_of_parent_classes(
             level - 1)
         number_of_class = self.dataset.check_each_number_of_class(level)
-        model = LCPLPredicted(
-            input_size, prev_number_of_class, self.hidden_size[level], self.target_hidden_size[level - 1], number_of_class, use_dropout=self.use_dropout, learning_rate=self.learning_rate)
+        model = LCPL_HMC_LMLP(
+            input_size, prev_number_of_class, self.hidden_size[level], number_of_class, use_dropout=self.use_dropout, learning_rate=self.learning_rate)
         if torch.cuda.is_available():
             model = model.cuda()
         self.classifier.append(model)

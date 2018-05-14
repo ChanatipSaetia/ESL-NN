@@ -4,7 +4,7 @@ from torch import optim
 import torch.nn.functional as F
 
 
-class LCPLNoLabelHidden(EachLevelClassifier):
+class LCPL_SHLNN_First(EachLevelClassifier):
 
     def __init__(self, input_size, hidden_size, number_of_class, use_dropout=True, learning_rate=0.001):
         self.hidden_size = hidden_size
