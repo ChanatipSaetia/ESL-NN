@@ -1,144 +1,141 @@
-# Hydeout
+# Encoded Sharing Layers Neural Network (ESL-NN)
 
-Hydeout updates the original [Hyde](https://github.com/poole/hyde)
-theme for [Jekyll](http://jekyllrb.com) 3.x and adds new functionality.
+## Overview
+ESL-NN is a "Hierarchical Text Categorization System" based on [PyTorch](http://pytorch.org/) which is free for download and free for non-commecial use.
 
-![Desktop](/_screenshots/1.png?raw=true)
-<img alt="Mobile home page" src="/_screenshots/2.png?raw=true" width="300px" />
-<img alt="Mobile post page" src="/_screenshots/3.png?raw=true" width="300px" />
+## Features
+* Multi-class classification
+* Multi-label classification
+* Hierarchical multi-label classification with tree and DAG structure.
 
-### Usage
+## Supported Platforms
+* MacOS
+* Linux
 
-Hydeout is available as the `jekyll-theme-hydeout` Ruby Gem.
-Add `gem "jekyll-theme-hydeout", "~> 3.4"` to your Gemfile and run
-`bundle install`.
+## Publications
+**Official ESL-NN algorithm:**<br>
+Peerapon Vateekul and Chanatip Saetia, “Enhance Accuracy of Hierarchical Text Categorization Based on Deep Learning Network Using Embedding Strategies,” Computer Science and Software Engineering (JCSSE), 2018 15th International Joint Conference on. IEEE, 2018. (In review process).
 
-Hydeout uses pagination, so if you have an `index.md`, you'll need to swap
-it with an `index.html` that uses the `index` layout:
+## Team Members
 
-```
----
-layout: index
-title: Home
----
-```
+1. Peerapon Vateekul (Supervisor)
+2. Chanatip Saetia
 
-### Keep It Simple
+## Related Works
+* [HR-SVM Project](https://sites.google.com/site/hrsvmproject/) - a "Hierarchical Multi-Label Classification System" based on LIBSVM and HEMKit
+* Mongkud Klungpornkun and Peerapon Vateekul, “Hierarchical Text Categorization Using Level Based Neural Networks of Word Embedding Sequences with Sharing Layer Information,” Computer Science and Software Engineering (JCSSE), 2017 14th International Joint Conference on. IEEE, 2017.
 
-In keeping with the original Hyde theme, Hydeout aims to keep the overall
-design lightweight and plugin-free. JavaScript is currently limited only
-to Disqus and Google Analytics (and is only loaded if you provide configuration
-variables).
+# Tutorial
+## Training Process
+1. Store dataset and hierarchical structure(if the task is hierarchical classification) in the /data in the following structure. A format in dataset and hierarchical file is described in Data format section
+~~~~
+data/
+    <your_dataset_name>/
+        <your_train_file_name>.txt
+        <your_test_file_name>.txt
+        hierarchy.txt
+~~~~
+Example
+~~~~
+data/
+    wipo_d/
+        train.txt
+        test.txt
+        hierarchy.txt
+~~~~
+2. Config the classifier by edit `config.json`. The configuration setting is explained in Configuration section
+3. Open a terminal and run
+~~~~
+./classifier/Predictor
+~~~~
+4. After the system is finished, the all result file will store in the `export/<your_dataset_name>` folder. In the folder will store this following file.
+    * `result.txt` - store the evaluation result in term of f1 macro and micro
+    * `prediction` - a folder which store the prediction of each instance in a dataset
+    * `probability_prediction` - a folder which store the probability prediction of each instance in a dataset
+    * `doc2vec` - a folder which store the document embedding of each instance in a dataset
+    * `level_i.model` - the model of ith level classifier
+    * `doc2vec.model` - the model of document embedding
 
-Hydeout makes heavy use of Flexbox in its CSS. If Flexbox is not available,
-the CSS degrades into a single column layout.
+## Evaluation Process
+1. Store a dataset similar with training process
+2. Config the classifier by edit `evaluater_config.json`. The configuration setting is explained in Configuration section
+3. Open a terminal and run
+~~~~
+./classifier/Evaluater
+~~~~
+4. After the system is finished, the evaluation result file will store in the `export/<your_train_model_folder>` folder. In the folder will store this following file.
+    * `result_<your_file_name>.txt` - store the evaluation result in term of f1 macro and micro
+    * `prediction/<your_file_name>.txt` - the prediction of each instance in a dataset
+    * `probability_prediction/<your_file_name>.txt` - the probability prediction of each instance in a dataset
 
-### Customization
+# Configuration
+## Training Configuration
+the configuration for training process which determined in `"config.json"`
+### Parameter
 
-Hydeout replaces Hyde's class-based theming with the use
-of the following SASS variables:
+| Parameter| Description |
+|-----------------|:-----------|
+| **data_name**| a name of dataset which is same as folder name in ``/data`` |
+| **train_file_name**       | a name of a file that store train dataset |
+| **test_file_name**        | a name of a file that store test dataset |
+| **classification_type**   | a type of classification <ul><li>"multi-class" : Multi-class classification</li><li>"multi-label" : Multi-label classification</li><li>"hierarchical" : Hierarchical multi-label classification</li></ul> |
+| **test_split**            | Enable/disable split some part of train data to be test data <br><sub>\*In this case the **test_file_name** data isn't used</sub> |
+| **predict_test**          | Enable/disable prediction test data in evaluation process |
+| **evaluate_test**         | Enable/disable evaluation test data in evaluation process |
+| **correction**            | Enable/disable label correction after prediction in evaluation process <br><sub>\*This parameter is used when **classification_type** is "hierarchical" only</sub>|
+| **mandatory_leaf**        | Select the classification task is mandatory leaf or not <br><sub>\*This parameter is used when **classification_type** is "hierarchical" only</sub> |
+| **hidden**                | a list of the number of hidden nodes in each level. <br><sub>\*This can be set to "auto" where the system will calculate the number of hidden nodes automatically</sub> |
+| **target_hidden**         | a list of the number of hidden nodes in each shared layer. <br><sub>\*This can be set to "auto" where the system will calculate the number of hidden nodes automatically</sub> |
+| **embedding_size**        | a size of document embedding |
 
-```scss
-$sidebar-bg-color: #202020 !default;
-$sidebar-sticky: true !default;
-$layout-reverse: false !default;
-$link-color: #268bd2 !default;
-```
+### Example
+~~~~
+{
+    "data_name": "wipo_d",
+    "train_file_name": "data.txt",
+    "test_file_name": "test.txt",
+    "classification_type": "hierarchical",
+    "test_split": false,
+    "predict_test": false,
+    "evaluate_test": false,
+    "correction": true,
+    "mandatory_leaf": false,
+    "hidden": [100,200,300],
+    "target_hidden": "auto",
+    "embedding_size": 150,
+    "embedding_type": "OPD"
+}
+~~~~
 
-To override these variables, create your own `assets/css/main.scss` file.
-Define your own variables, then import in Hydeout's SCSS, like so:
+## Evaluating Configuration
+the configuration for evaluating process which determined in `"evaluater_config.json"`
+### Parameter
 
-```scss
----
-# Jekyll needs front matter for SCSS files
----
+| Parameter | Description |
+|-----------------|:-----------|
+| **train_model_folder** | a name of folder in `/export` where the train model is stored |
+| **file_name** | a name of a file that store dataset that will be used to predict and evaluate |
 
-$sidebar-bg-color: #ac4142;
-$link-color: #ac4142;
-$sidebar-sticky: false;
-@import "hydeout";
-```
+### Example
+~~~~
+{
+    "train_model_folder": "wipo_d",
+    "file_name": "test.txt"
+}
+~~~~
 
-See the [_variables](_sass/hydeout/_variables.scss) file for other variables
-you can override.
+# Data file format
+The data must be tokenized and store sequences of words in documents to a file with this following format.
+~~~~
+sport,football:[football,players,are,tried]
+~~~~
+This is an example format of one document which `sport` and `football` is its labels and `[football,players,are,tried]` is the sequence of words in that document
 
-You can see the full set of partials you can replace in the
-[`_includes`](_includes) folder, but there are a few worth noting:
-
-* `_includes/copyright.html` - Insert your own copyright here.
-
-* `_includes/custom-head.html` - Insert custom head tags (e.g. to load your
-  own stylesheets)
-
-* `_includes/custom-foot.html` - Insert custom elements at the end of the
-  body (e.g. for custom JS)
-
-* `_includes/custom-nav-links.html` - Additional nav links to insert at the
-  end of the list of links in the sidebar.
-
-  Pro-tip: The `nav`s in the sidebar are flexboxes. Use the `order` property
-  to order your links.
-
-* `_includes/custom-icon-links.html`- Additional icon links to insert at the
-  end of the icon links at the bottom of the sidebar. You can use the `order`
-  property to re-order.
-
-* `_includes/favicons.html` - Replace references to `favicon.ico` and
-  `favicon.png` with your own favicons references.
-
-* `_includes/font-includes.html` - The Abril Fatface font used for the site
-  title is loaded here. If you're overriding that font in the CSS, be sure
-  to also remove the font load reference here.
-
-### New Features
-
-* Hydeout adds a new tags page (accessible in the sidebar). Just create a
-  new page with the tags layout:
-
-  ```
-  ---
-  layout: tags
-  title: Tags
-  ---
-  ```
-
-* Hydeout adds a new "category" layout for dedicated category pages.
-  Category pages are automatically added to the sidebar. All other pages
-  must have `sidebar_link: true` in their front matter to show up in
-  the sidebar. To create a category page, use the `category` layout"
-
-  ```
-  ---
-  layout: category
-  title: My Category
-  ---
-
-  Description of "My Category"
-  ```
-
-* A simple redirect-to-Google search is available. Just create a page with
-  the `search` layout.
-
-  ```
-  ---
-  layout: search
-  title: Google Search
-  ---
-  ```
-
-* Disqus integration is ready out of the box. Just add the following to
-  your config file:
-
-  ```yaml
-  disqus:
-    shortname: my-disqus-shortname
-  ```
-
-  If you don't want Disqus or want to use something else, override
-  `comments.html`.
-
-* For Google Analytics support, define a `google_analytics` variable with
-  your property ID in your config file.
-
-There's also a bunch of minor tweaks and adjustments throughout the
-theme. Hope this works for you!
+# Hierarchy file format
+The hierarchy can be explain in this following format
+~~~~
+hobby sport
+sport football
+sport basketball
+~~~~
+This is an example format of the hierarchy file. Two categories store in one line where the first categories is a parent node of the second categories. For instance, `hobby` is a parent node of `sport`
