@@ -10,8 +10,8 @@ class LCPL_SHLNN(EachLevelClassifier):
     def __init__(self, input_size, previous_number_of_class, hidden_size, number_of_class, use_dropout=True, learning_rate=0.001):
         self.hidden_size = hidden_size
         self.previous_number_of_class = previous_number_of_class
-        super(LCPLPredicted_Hidden, self).__init__(input_size,
-                                                   number_of_class, use_dropout, learning_rate)
+        super(LCPL_SHLNN, self).__init__(input_size,
+                                         number_of_class, use_dropout, learning_rate)
 
     def initial_structure(self):
         self.dense = nn.Linear(self.input_size +

@@ -11,7 +11,7 @@ class LCPL_ESLNN(EachLevelClassifier):
         self.hidden_size = hidden_size
         self.previous_number_of_class = previous_number_of_class
         self.target_hidden_node = target_hidden_node
-        super(LCPLPredicted, self).__init__(input_size,
+        super(LCPL_ESLNN, self).__init__(input_size,
                                             number_of_class, use_dropout, learning_rate)
 
     def initial_structure(self):
