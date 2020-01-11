@@ -29,8 +29,9 @@ class TestAssembleNoLabel(unittest.TestCase):
         self.dataset_validate.change_to_Doc2Vec(doc2vec)
         self.dataset_test.change_to_Doc2Vec(doc2vec)
         hidden = [5] * self.dataset.number_of_level()
+        batch_size = [3] * self.dataset.number_of_level()
         self.model = HMC_LMLP(
-            "test", self.dataset, self.dataset_validate, self.dataset_test, 30, 3, hidden, stopping_time=3)
+            "test", self.dataset, self.dataset_validate, self.dataset_test, 30, hidden, stopping_time=3, batch_size=batch_size)
         self.model.classifier[0].dense.weight.data.fill_(1)
         self.model.classifier[0].dense.bias.data.zero_()
         self.model.classifier[0].logit.weight.data.fill_(0.2)

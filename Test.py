@@ -15,7 +15,9 @@ import json
 
 # %%
 evaluater_config = json.load(open('evaluater_config.json'))
+print(evaluater_config)
 data_name = evaluater_config['train_model_folder']
+batch_size = evaluater_config['batch_size']
 test_file_name = evaluater_config['file_name']
 
 
@@ -78,7 +80,7 @@ print("---------------Training classifiers-----------------")
 
 
 # %%
-model = ESLNN(data_name, dataset_test, "temp", dataset_test, iteration=2000, stopping_time=300, batch_size=65536, hidden_size=hidden, target_hidden_size=target_hidden, use_dropout=True, start_level=99999)
+model = ESLNN(data_name, dataset_test, "temp", dataset_test, iteration=2000, stopping_time=300, batch_size=batch_size, hidden_size=hidden, target_hidden_size=target_hidden, use_dropout=True, start_level=99999)
 
 
 # %%

@@ -1,4 +1,10 @@
 {
     "train_model_folder": "wipo_d",
-    "file_name": "test.txt"
+    "file_name": "test.txt",
+    "batch_size": [
+        -1,
+        -1,
+        -1,
+        50000
+    ]
 }

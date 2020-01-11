@@ -26,6 +26,7 @@ mandatory_leaf = config['mandatory_leaf']
 hidden = config['hidden']
 target_hidden = config['target_hidden']
 embedding_size = config['embedding_size']
+batch_size = config['batch_size']
 embedding_type = 'OPD'
 
 
@@ -72,8 +73,8 @@ elif embedding_type == "Normal":
     doc2vec = NoTag_Doc2Vec(data_name, dataset_train.number_of_classes(), size=embedding_size, epoch=270, batch_size=10000)
 else:
     doc2vec = Doc2Vec(data_name, dataset_train.number_of_classes(), size=embedding_size, epoch=270, batch_size=10000)
-doc2vec.fit(dataset_train.datas, dataset_train.labels, dataset_validate.datas, dataset_validate.labels, early_stopping=False)
-# doc2vec.load_model('export/%s/doc2vec.model' % data_name)
+# doc2vec.fit(dataset_train.datas, dataset_train.labels, dataset_validate.datas, dataset_validate.labels, early_stopping=False)
+doc2vec.load_model('export/%s/doc2vec.model' % data_name)
 
 
 # %%
@@ -105,7 +106,7 @@ print("---------------Training classifiers-----------------")
 
 
 # %%
-model = ESLNN(data_name, dataset_train, dataset_validate, dataset_test, iteration=2000, stopping_time=300, batch_size=65536, hidden_size=hidden, target_hidden_size=target_hidden, use_dropout=True, start_level=0)
+model = ESLNN(data_name, dataset_train, dataset_validate, dataset_test, iteration=2000, stopping_time=300, batch_size=batch_size, hidden_size=hidden, target_hidden_size=target_hidden, use_dropout=True, start_level=0)
 
 
 # %%

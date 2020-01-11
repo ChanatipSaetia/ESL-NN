@@ -9,10 +9,10 @@ import pickle
 
 class ESLNN(AssembleLevel):
 
-    def __init__(self, data_name, dataset, dataset_validate, dataset_test, iteration, batch_size, hidden_size, target_hidden_size, learning_rate=0.001, use_dropout=True, early_stopping=True, stopping_time=500, start_level=0, end_level=10000):
+    def __init__(self, data_name, dataset, dataset_validate, dataset_test, iteration, hidden_size, target_hidden_size, learning_rate=0.001, use_dropout=True, early_stopping=True, batch_size=None, stopping_time=500, start_level=0, end_level=10000):
         self.target_hidden_size = target_hidden_size
-        super(ESLNN, self).__init__(data_name, dataset, dataset_validate, dataset_test, iteration, batch_size,
-                                    hidden_size, learning_rate, use_dropout, early_stopping, stopping_time, start_level, end_level)
+        super(ESLNN, self).__init__(data_name, dataset, dataset_validate, dataset_test, iteration,
+                                    hidden_size, learning_rate, use_dropout, early_stopping, batch_size, stopping_time, start_level, end_level)
 
     def initial_classifier(self):
         torch.manual_seed(12345)
@@ -59,19 +59,19 @@ class ESLNN(AssembleLevel):
             if not os.path.exists(input_directory):
                 os.makedirs(input_directory)
 
-            if not os.path.isfile(input_directory + '/%d.pickle' % batch_number):
-                input_data = self.input_classifier(
-                    x, level - 1, batch_number, mode)
-                if torch.cuda.is_available():
-                    input_data = input_data.cuda()
-                input_data = Variable(input_data, volatile=True)
-                prev_pred = self.classifier[level - 1](input_data).data.cpu().numpy()[:,
-                                                                                      self.dataset.filter_parent(level - 1)]
-                with open(input_directory + '/%d.pickle' % batch_number, 'wb') as f:
-                    pickle.dump(prev_pred, f)
+            # if not os.path.isfile(input_directory + '/%d.pickle' % batch_number):
+            input_data = self.input_classifier(
+                x, level - 1, batch_number, mode)
+            if torch.cuda.is_available():
+                input_data = input_data.cuda()
+            input_data = Variable(input_data, volatile=True)
+            prev_pred = self.classifier[level - 1](input_data).data.cpu().numpy()[:,
+                                                                                    self.dataset.filter_parent(level - 1)]
+            with open(input_directory + '/%d.pickle' % batch_number, 'wb') as f:
+                pickle.dump(prev_pred, f)
 
-            else:
-                with open(input_directory + '/%d.pickle' % batch_number, 'rb') as f:
-                    prev_pred = pickle.load(f)
+            # else:
+            #     with open(input_directory + '/%d.pickle' % batch_number, 'rb') as f:
+            #         prev_pred = pickle.load(f)
             prev_pred = FloatTensor(prev_pred)
             return torch.cat([x, prev_pred], 1)

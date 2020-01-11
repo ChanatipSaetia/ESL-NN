@@ -15,8 +15,8 @@ from evaluation import f1_from_tp_pcp, tp_pcp
 
 class AssembleLevel():
 
-    def __init__(self, data_name, dataset, dataset_validate, dataset_test, iteration, batch_size, hidden_size,
-                 learning_rate=0.001, use_dropout=True, early_stopping=True, stopping_time=500, start_level=0, end_level=10000):
+    def __init__(self, data_name, dataset, dataset_validate, dataset_test, iteration, hidden_size,
+                 learning_rate=0.001, use_dropout=True, early_stopping=True, batch_size=None, stopping_time=500, start_level=0, end_level=10000):
         self.data_name = data_name
         if not os.path.exists("best_now/%s" % data_name):
             os.makedirs("best_now/%s" % data_name)
@@ -131,7 +131,8 @@ class AssembleLevel():
                               (train_f1_macro, f1_macro))
 
                 check = abs(previous_loss - all_loss) / number_of_batch < 0.01
-                if(check and start_batch <= self.dataset.number_of_data()):
+                limit_batch_size = min(self.dataset.number_of_data(), self.get_batch_size(level))
+                if(check and start_batch <= limit_batch_size):
                     start_batch *= 2
                     if level > 0 and os.path.isdir('data/%s/output' % self.data_name):
                         shutil.rmtree('data/%s/output/' % self.data_name)
@@ -139,6 +140,15 @@ class AssembleLevel():
                 previous_loss = all_loss
             if verbose:
                 print()
+
+    def get_batch_size(self, level):
+        assert level < len(self.batch_size)
+        if self.batch_size:
+            if level == -1:
+                return min([ 99999999999999 if v==-1 else v for v in self.batch_size])
+            elif self.batch_size[level] != -1:
+                return self.batch_size[level]        
+        return 99999999999999
 
     def evaluate_each_level(self, level, mode, threshold=0):
         if mode == "train":
@@ -163,7 +173,7 @@ class AssembleLevel():
         all_cp = Variable(initial_cp)
 
         number_of_batch = 0
-        for datas, labels in evaluated_data.generate_batch(level, self.batch_size):
+        for datas, labels in evaluated_data.generate_batch(level, self.get_batch_size(level)):
             number_of_batch = number_of_batch + 1
             datas_in = self.input_classifier(
                 datas, level, number_of_batch, mode)
@@ -201,7 +211,7 @@ class AssembleLevel():
             all_pcp = all_pcp.cuda()
             all_cp = all_cp.cuda()
 
-        for datas, labels in evaluated_data.generate_batch(-1, self.batch_size):
+        for datas, labels in evaluated_data.generate_batch(-1, self.get_batch_size(-1)):
 
             number_of_batch = number_of_batch + 1
             all_labels = FloatTensor([])
@@ -307,7 +317,7 @@ class AssembleLevel():
                   (self.data_name, file_name), 'w')
 
         number_of_batch = 0
-        for datas, labels in evaluated_data.generate_batch(-1, self.batch_size):
+        for datas, labels in evaluated_data.generate_batch(-1, self.get_batch_size(-1)):
 
             number_of_batch = number_of_batch + 1
             all_labels = FloatTensor([])
