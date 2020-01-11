@@ -5,7 +5,7 @@ from scipy.sparse import csr_matrix
 from torch import FloatTensor, ByteTensor
 from torch.autograd import Variable
 
-from assemble_classifier import AssemblePredicted
+from assemble_classifier import ESLNN
 from data.Dataset import Dataset
 
 
@@ -21,16 +21,16 @@ class TempDoc2vec():
 class TestAssemblePredicted(unittest.TestCase):
 
     def setUp(self):
-        self.dataset = Dataset("test", 1, "train", sequence=True)
-        self.dataset_validate = Dataset("test", 1, "validate", sequence=True)
-        self.dataset_test = Dataset("test", 1, "test", sequence=True)
+        self.dataset = Dataset("test", "train", 1, sequence=True)
+        self.dataset_validate = Dataset("test", "validate", 1, sequence=True)
+        self.dataset_test = Dataset("test", "test", 1, sequence=True)
         doc2vec = TempDoc2vec()
         self.dataset.change_to_Doc2Vec(doc2vec)
         self.dataset_validate.change_to_Doc2Vec(doc2vec)
         self.dataset_test.change_to_Doc2Vec(doc2vec)
         hidden = [5] * self.dataset.number_of_level()
         target_hidden = [3] * (self.dataset.number_of_level() - 1)
-        self.model = AssemblePredicted(
+        self.model = ESLNN(
             "test", self.dataset, self.dataset_validate, self.dataset_test, 30, 3, hidden, target_hidden, stopping_time=3)
         self.model.classifier[0].dense.weight.data.fill_(1)
         self.model.classifier[0].dense.bias.data.zero_()

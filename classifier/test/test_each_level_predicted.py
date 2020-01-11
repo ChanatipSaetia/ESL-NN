@@ -7,7 +7,7 @@ from torch import FloatTensor
 from scipy.sparse import csr_matrix
 from torch.autograd import Variable
 
-from classifier import LCPLPredicted
+from classifier import LCPL_ESLNN
 from data.Dataset import Dataset
 
 
@@ -23,7 +23,7 @@ class TempDoc2vec():
 class TestEachLevelPredicted(unittest.TestCase):
 
     def setUp(self):
-        self.model = LCPLPredicted(7, 2, 5, 3, 2, use_dropout=False)
+        self.model = LCPL_ESLNN(7, 2, 5, 3, 2, use_dropout=False)
         self.model.dense.weight.data.fill_(1)
         self.model.dense.bias.data.zero_()
         self.model.prev_dense.weight.data.fill_(1)

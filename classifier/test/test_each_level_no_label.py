@@ -6,7 +6,7 @@ import torch
 from scipy.sparse import csr_matrix
 from torch.autograd import Variable
 
-from classifier import LCPLNoLabel
+from classifier import LCPL_ESLNN_First
 from data.Dataset import Dataset
 
 
@@ -22,14 +22,14 @@ class TempDoc2vec():
 class TestEachLevel(unittest.TestCase):
 
     def setUp(self):
-        self.model = LCPLNoLabel(7, 5, 2, use_dropout=False)
+        self.model = LCPL_ESLNN_First(7, 5, 2, use_dropout=False)
         self.model.dense.weight.data.fill_(1)
         self.model.dense.bias.data.zero_()
         self.model.logit.weight.data.fill_(0.2)
         self.model.logit.bias.data.zero_()
         if torch.cuda.is_available():
             self.model = self.model.cuda()
-        self.dataset = Dataset("test", 1, "train", sequence=True)
+        self.dataset = Dataset("test", "train", 1, sequence=True)
         doc2vec = TempDoc2vec()
         self.dataset.change_to_Doc2Vec(doc2vec)
 

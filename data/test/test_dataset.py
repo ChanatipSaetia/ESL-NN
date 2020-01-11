@@ -11,9 +11,9 @@ from data.exception import NotEmbeddingState
 class DatasetUnitTest(unittest.TestCase):
 
     def setUp(self):
-        self.dataset_train = Dataset("test", 1, "train", sequence=True)
-        self.dataset_validate = Dataset("test", 1, "validate", sequence=True)
-        self.dataset_test = Dataset("test", 1, "test", sequence=True)
+        self.dataset_train = Dataset(data_name="test", mode="train", fold_number=1, sequence=True)
+        self.dataset_validate = Dataset(data_name="test", mode="validate", fold_number=1, sequence=True)
+        self.dataset_test = Dataset(data_name="test", mode="test", fold_number=1, sequence=True)
 
     def test_hierarchy(self):
         real_all_name = ['1', '2', '3', '4', '5', '6', '7', '8']
