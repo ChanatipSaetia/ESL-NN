@@ -6,7 +6,6 @@ from gensim.models.doc2vec import Doc2Vec, TaggedDocument
 from sklearn.metrics.pairwise import cosine_similarity
 from sklearn.model_selection import train_test_split
 
-
 class GensimDoc2Vec():
 
     def __init__(self, data_name, number_of_class, alpha=0.001, size=25, dm=0, window=8, min_count=3, epoch=200, batch_size=1000):
@@ -19,7 +18,7 @@ class GensimDoc2Vec():
         self.size = size
         self.epoch = epoch
         self.batch_size = batch_size
-        self.model = Doc2Vec(alpha=self.alpha, vector_size=self.size, dm=self.dm, window=self.window,
+        self.model = Doc2Vec(alpha=self.alpha, size=self.size, dm=self.dm, window=self.window,
                              min_count=self.min_count, workers=4, compute_loss=True, seed=12345)
         self.all_label = set(range(number_of_class))
 

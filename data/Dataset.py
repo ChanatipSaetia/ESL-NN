@@ -53,17 +53,29 @@ class Dataset():
                 self.hierarchy.keys()) for i in range(self.number_of_classes())])
 
     def load_datas(self):
-        if self.state == 'embedding':
-            with open('data/%s/doc2vec/data.%s.pickle' % (self.data_name, self.mode), mode='rb') as f:
-                self.datas, self.labels = pickle.load(f)
-            self.create_label_stat()
-            return
         if self.fold_number == 0:
             store_name = "%s/store/data.pickle.%s" % (
                 self.data_name, self.mode)
         else:
             store_name = "%s/fold/data_%d.pickle.%s" % (
                 self.data_name, self.fold_number, self.mode)
+        if self.state == 'embedding':
+            self.datas, self.labels = prep.load_data_in_pickle(store_name)
+            
+            indice = [j for i in self.labels for j in i]
+            indptr = np.cumsum([0] + [len(i) for i in self.labels])
+            data_one = np.ones(len(indice))
+            self.labels = csr_matrix((data_one, indice, indptr),
+                                    shape=(len(self.labels), len(self.all_name))).tocsc()
+            data = []
+            with open('export/%s/doc2vec/%s.txt' % (self.data_name, self.mode), mode='r') as f:
+                for i in f:
+                    data.append(list(map(float, i[:-1].split(' '))))
+            self.datas = np.array(data)
+            # with open('data/%s/doc2vec/data.%s.pickle' % (self.data_name, self.mode), mode='rb') as f:
+            #     self.datas, self.labels = pickle.load(f)
+            self.create_label_stat()
+            return
 
         if not os.path.isfile("data/" + store_name):
             if not self.test_split:
@@ -113,11 +125,11 @@ class Dataset():
 
     def change_to_Doc2Vec(self, doc2vec):
         self.datas = doc2vec.transform(self.datas)
+        self.state = "embedding"
 
         indice = [j for i in self.labels for j in i]
         indptr = np.cumsum([0] + [len(i) for i in self.labels])
         data_one = np.ones(len(indice))
-        self.state = "embedding"
         self.labels = csr_matrix((data_one, indice, indptr),
                                  shape=(len(self.labels), len(self.all_name))).tocsc()
         if not os.path.exists('export/%s/doc2vec/' % self.data_name):
